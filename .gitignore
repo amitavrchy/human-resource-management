@@ -10,3 +10,12 @@ __pycache__/
 *.log
 .DS_Store
 !**/.env.example
+*.tsbuildinfo
+uploads/
+chroma/
+.pytest_cache/
+.ruff_cache/
+playwright-report/
+test-results/
+.local/
+coverage/

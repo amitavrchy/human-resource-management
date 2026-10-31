@@ -13,14 +13,19 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/main.js",
     "lint": "oxlint --type-aware src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:dev": "prisma migrate dev",
+    "db:seed": "node prisma/seed.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
@@ -37,7 +42,10 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "cookie-parser": "^1.4.7",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
@@ -58,6 +66,8 @@
     "supertest": "^7.0.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.2",
+    "@types/cookie-parser": "^1.4.9",
+    "@types/multer": "^2.0.0"
   }
 }
