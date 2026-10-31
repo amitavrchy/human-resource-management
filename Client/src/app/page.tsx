@@ -1,69 +1,8 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { ArrowRight, ArrowUpRight, BriefcaseBusiness, CalendarDays, CheckCheck, House, Network, Sparkles, Users } from 'lucide-react';
+import { Brand } from '@/components/layout/app-shell';
+import { Avatar, Badge } from '@/components/ui/core';
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
-}
+  return <div className="marketing"><header className="marketing-nav"><Brand /><div><a href="#features" className="marketing-nav-link">Why PeopleOS</a><Link href="/login">Sign in</Link><Link href="/register" className="btn btn-primary">Get started <ArrowUpRight size={17} /></Link></div></header><main><section className="marketing-hero"><span className="hero-pill"><Sparkles size={15} />People first. Busywork last.</span><h1>A better workday<br />starts with <span>your people.</span></h1><p>Bring your people, hiring and everyday HR together in one calm, connected workspace. Make room for what matters.</p><div className="hero-actions"><Link href="/register" className="btn btn-primary">Start your workspace <ArrowRight size={18} /></Link><Link href="/login" className="btn btn-secondary">Open PeopleOS</Link></div></section><section className="marketing-preview" aria-label="Illustrative PeopleOS workspace preview"><div className="preview-window"><div className="preview-sidebar"><Brand />{[[House, 'Overview'], [Users, 'People'], [Network, 'Org chart'], [CalendarDays, 'Time off'], [BriefcaseBusiness, 'Recruiting'], [CheckCheck, 'Onboarding']].map(([Icon, name], i) => { const PreviewIcon = Icon as typeof House; return <div className={`preview-nav-item ${i === 0 ? 'active' : ''}`} key={String(name)}><PreviewIcon size={17} />{String(name)}</div>; })}</div><div className="preview-body"><div className="eyebrow">A WORKSPACE THAT FEELS LIKE HOME</div><h2>Good things grow together.</h2><p>A clear view of your team. A little more breathing room.</p><div className="preview-metrics">{[['One home', 'Your people'], ['More clarity', 'Less admin'], ['Better starts', 'Smoother onboarding']].map(([value, text]) => <div className="preview-metric" key={value}><span>{text}</span><strong>{value}</strong></div>)}</div><div className="preview-people"><Avatar name="Maya Patel" size="lg" /><div><strong>A warm welcome to your newest teammate.</strong><small>A thoughtful first day starts before day one.</small></div><Badge value="onboarding" /></div><p className="muted" style={{ marginTop: 16 }}>An illustrative preview. Your workspace starts with your own team.</p></div></div></section><section id="features" className="marketing-feature-grid">{[{ icon: Users, title: 'Know your people.', text: 'A connected directory, rich employee profiles and an org chart that makes every connection clear.' }, { icon: CalendarDays, title: 'Make space for life.', text: 'Simple time-off requests, clear balances and approvals that keep everyone in the loop.' }, { icon: BriefcaseBusiness, title: 'Build your next chapter.', text: 'Keep hiring moving from application to offer, then give every new teammate a thoughtful start.' }, { icon: Sparkles, title: 'A helpful second hand.', text: 'Draft job descriptions, review documented skills and find answers in your company handbook.' }].map(feature => <div key={feature.title}><span className="feature-icon"><feature.icon size={23} /></span><h3>{feature.title}</h3><p>{feature.text}</p></div>)}</section><section className="marketing-cta"><h2>Less busywork. More possibility.</h2><p>Give your people a workspace they’ll feel good about.</p><Link className="btn btn-primary" href="/register">Create your workspace <ArrowRight size={17} /></Link></section></main><footer className="marketing-footer"><Brand /><span>People ops without the busywork.</span><Link className="text-link" href="/login">Your workspace <ArrowUpRight size={16} /></Link></footer></div>;
+}
