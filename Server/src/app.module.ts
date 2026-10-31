@@ -9,6 +9,10 @@ import { AuthController } from './auth/auth.controller.js';
 import { AuthService } from './auth/auth.service.js';
 import { SessionGuard } from './auth/auth.guard.js';
 import { AccessService } from './common/access.service.js';
+import { PeopleService } from './people/people.service.js';
+import { PeopleController } from './people/people.controller.js';
+import { OrganizationService } from './organization/organization.service.js';
+import { OrganizationController } from './organization/organization.controller.js';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, validate: (env: Record<string, unknown>) => {
@@ -17,8 +21,8 @@ import { AccessService } from './common/access.service.js';
     if (!env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
     return env;
   } }), JwtModule.register({}), PrismaModule],
-  controllers: [AppController, AuthController],
-  providers: [AppService, AuthService, AccessService, { provide: APP_GUARD, useClass: SessionGuard }],
+  controllers: [AppController, AuthController, PeopleController, OrganizationController],
+  providers: [AppService, AuthService, AccessService, PeopleService, OrganizationService, { provide: APP_GUARD, useClass: SessionGuard }],
 })
 export class AppModule {}
 
