@@ -13,6 +13,8 @@ import { PeopleService } from './people/people.service.js';
 import { PeopleController } from './people/people.controller.js';
 import { OrganizationService } from './organization/organization.service.js';
 import { OrganizationController } from './organization/organization.controller.js';
+import { LeaveService } from './leave/leave.service.js';
+import { LeaveController } from './leave/leave.controller.js';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, validate: (env: Record<string, unknown>) => {
@@ -21,8 +23,8 @@ import { OrganizationController } from './organization/organization.controller.j
     if (!env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
     return env;
   } }), JwtModule.register({}), PrismaModule],
-  controllers: [AppController, AuthController, PeopleController, OrganizationController],
-  providers: [AppService, AuthService, AccessService, PeopleService, OrganizationService, { provide: APP_GUARD, useClass: SessionGuard }],
+  controllers: [AppController, AuthController, PeopleController, OrganizationController, LeaveController],
+  providers: [AppService, AuthService, AccessService, PeopleService, OrganizationService, LeaveService, { provide: APP_GUARD, useClass: SessionGuard }],
 })
 export class AppModule {}
 
