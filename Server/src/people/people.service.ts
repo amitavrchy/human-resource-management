@@ -23,7 +23,7 @@ export class PeopleService {
       ...(query.q ? { OR: ['firstName', 'lastName', 'workEmail', 'title'].map(field => ({ [field]: { contains: query.q, mode: 'insensitive' } })) } : {}),
     };
     const [items, total] = await this.db.$transaction([
-      this.db.employee.findMany({ where, select: employeeSelect, orderBy: [{ firstName: 'asc' }, { id: 'asc' }], skip: (query.page - 1) * query.limit, take: query.limit }),
+      this.db.employee.findMany({ where, select: employeeSelect, orderBy: [{ [query.sortBy ?? 'firstName']: query.sortOrder ?? 'asc' }, { id: 'asc' }], skip: (query.page - 1) * query.limit, take: query.limit }),
       this.db.employee.count({ where }),
     ]);
     return { items, total, page: query.page, limit: query.limit, pages: Math.max(1, Math.ceil(total / query.limit)) };

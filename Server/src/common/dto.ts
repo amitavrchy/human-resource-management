@@ -16,6 +16,8 @@ export class RegisterDto extends LoginDto {
   @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @Length(3, 60) slug: string;
 }
 export class PageDto {
+  @IsOptional() @IsIn(['firstName', 'title', 'startDate', 'status']) sortBy?: 'firstName' | 'title' | 'startDate' | 'status';
+  @IsOptional() @IsIn(['asc', 'desc']) sortOrder?: 'asc' | 'desc';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) page = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;
   @IsOptional() @IsString() @MaxLength(100) q?: string;
