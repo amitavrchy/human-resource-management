@@ -217,6 +217,7 @@ model LeaveRequest {
 }
 
 model Job {
+  hiringManagerId String?
   id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -228,6 +229,7 @@ model Job {
   candidates     Candidate[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  @@index([organizationId, hiringManagerId])
 }
 
 model Candidate {

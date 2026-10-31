@@ -62,6 +62,7 @@ export class LeaveDto {
   @IsOptional() @IsString() @MaxLength(1000) reason?: string;
 }
 export class JobDto {
+  @IsOptional() @IsString() @MaxLength(100) hiringManagerId?: string;
   @IsString() @Transform(trim) @Length(2, 160) title: string;
   @IsOptional() @IsString() @MaxLength(120) department?: string;
   @IsOptional() @IsString() @MaxLength(120) location?: string;
