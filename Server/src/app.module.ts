@@ -18,6 +18,10 @@ import { LeaveController } from './leave/leave.controller.js';
 import { RecruitingController } from './recruiting/recruiting.controller.js';
 import { RecruitingService } from './recruiting/recruiting.service.js';
 import { FilesService } from './common/files.service.js';
+import { LifecycleController } from './lifecycle/lifecycle.controller.js';
+import { LifecycleService } from './lifecycle/lifecycle.service.js';
+import { DocumentsController } from './documents/documents.controller.js';
+import { DocumentsService } from './documents/documents.service.js';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, validate: (env: Record<string, unknown>) => {
@@ -26,8 +30,8 @@ import { FilesService } from './common/files.service.js';
     if (!env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
     return env;
   } }), JwtModule.register({}), PrismaModule],
-  controllers: [AppController, AuthController, PeopleController, OrganizationController, LeaveController, RecruitingController],
-  providers: [AppService, AuthService, AccessService, PeopleService, OrganizationService, LeaveService, RecruitingService, FilesService, { provide: APP_GUARD, useClass: SessionGuard }],
+  controllers: [AppController, AuthController, PeopleController, OrganizationController, LeaveController, RecruitingController, LifecycleController, DocumentsController],
+  providers: [AppService, AuthService, AccessService, PeopleService, OrganizationService, LeaveService, RecruitingService, FilesService, LifecycleService, DocumentsService, { provide: APP_GUARD, useClass: SessionGuard }],
 })
 export class AppModule {}
 
