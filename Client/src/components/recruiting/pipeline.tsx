@@ -2,13 +2,13 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Link from 'next/link';
-import { ArrowLeft, BriefcaseBusiness, List, MapPin, Pencil, Plus, Search, Sparkles, Trash2, Users } from 'lucide-react';
+import { Pencil, Plus, Search, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import type { Candidate, Job, Stage } from '@/lib/types';
 import { canRecruit, cn, dateLabel, label } from '@/lib/utils';
 import { useAction, useApi, useSession } from '@/hooks/use-api';
-import { Avatar, Badge, Button, EmptyState, ErrorState, Field, Loading, Modal, PageHeader, Panel, Tabs } from '@/components/ui/core';
+import { Avatar, Badge, Button, ErrorState, Field, Loading, Modal, PageHeader, Panel, Tabs } from '@/components/ui/core';
 import { HireDialog, JobDialog } from './job-form';
 import { useRouter } from 'next/navigation';
 

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import Link from 'next/link';
-import { ArrowUpRight, BookOpen, Download, FileText, Plus, RefreshCw, Search, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Download, FileText, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, errorMessage } from '@/lib/api';
 import { downloadFile } from '@/lib/download';

@@ -5,7 +5,7 @@ import { compare, hash } from 'bcrypt';
 import { createHash, randomBytes } from 'node:crypto';
 import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { LoginDto, RegisterDto } from '../common/dto.js';
+import { LoginDto, RegisterDto, PasswordDto } from '../common/dto.js';
 import type { Actor } from '../common/context.js';
 
 export const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex');
@@ -78,5 +78,18 @@ export class AuthService {
     const user = await this.db.user.findUniqueOrThrow({ where: { id: actor.userId }, select: { id: true, email: true, name: true } });
     const organization = await this.db.organization.findUniqueOrThrow({ where: { id: actor.organizationId }, select: { id: true, name: true, slug: true, timezone: true, workWeekdays: true } });
     return { user, organization, role: actor.role, employeeId: actor.employeeId, membershipId: actor.membershipId };
+  }
+  async changePassword(actor: Actor, dto: PasswordDto, res: Response) {
+    const user = await this.db.user.findUniqueOrThrow({ where: { id: actor.userId } });
+    if (!(await compare(dto.currentPassword, user.passwordHash))) throw new UnauthorizedException('Your current password is incorrect.');
+    const nextHash = await passwordHash(dto.newPassword);
+    await this.db.$transaction(async tx => {
+      const result = await tx.user.updateMany({ where: { id: actor.userId, passwordHash: user.passwordHash }, data: { passwordHash: nextHash } });
+      if (!result.count) throw new UnauthorizedException('Password changed during this request. Please sign in again.');
+      await tx.refreshSession.deleteMany({ where: { userId: actor.userId } });
+      await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorUserId: actor.userId, action: 'account.password_changed', entityType: 'User', entityId: actor.userId } });
+    });
+    res.clearCookie('peopleos_access', this.cookieOptions()); res.clearCookie('peopleos_refresh', this.cookieOptions());
+    return { success: true };
   }
 }

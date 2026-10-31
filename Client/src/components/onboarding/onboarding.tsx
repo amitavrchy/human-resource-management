@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import type { Employee, Task } from '@/lib/types';
 import { cn, dateLabel, fullName, label } from '@/lib/utils';
 import { useAction, useApi, useSession } from '@/hooks/use-api';
-import { Avatar, Badge, EmptyState, ErrorState, Loading, PageHeader, Panel, PanelHeader, Progress, Tabs } from '@/components/ui/core';
+import { Avatar, Badge, EmptyState, ErrorState, Loading, PageHeader, Panel, Progress, Tabs } from '@/components/ui/core';
 
 export function Onboarding() {
   const people = useApi<Employee[]>('/onboarding');

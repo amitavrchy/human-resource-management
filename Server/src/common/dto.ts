@@ -138,3 +138,7 @@ export class JdDto {
 export class ChatDto { @IsString() @Transform(trim) @Length(2, 3000) message: string; }
 export class ScreenDto { @IsString() @Length(1, 100) candidateId: string; }
 export class IngestDto { @IsString() @Length(1, 100) documentId: string; }
+export class PasswordDto {
+  @IsString() @Length(1, 72) currentPassword: string;
+  @IsString() @Length(12, 72) newPassword: string;
+}

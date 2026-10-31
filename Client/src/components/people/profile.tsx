@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight, CalendarDays, CheckCheck, Download, Mail, MapPin, Pencil, ShieldCheck, UserRound, Archive } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, CalendarDays, CheckCheck, Download, MapPin, Pencil, ShieldCheck, UserRound, Archive } from 'lucide-react';
 import { useAction, useApi, useSession } from '@/hooks/use-api';
 import { api } from '@/lib/api';
 import type { Employee } from '@/lib/types';

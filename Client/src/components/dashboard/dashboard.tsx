@@ -7,7 +7,7 @@ import { useApi, useAction, useSession } from '@/hooks/use-api';
 import { api } from '@/lib/api';
 import { dateLabel, fullName, isAdmin, label } from '@/lib/utils';
 import type { Balance, Dashboard as DashboardData, Task } from '@/lib/types';
-import { Avatar, Button, EmptyState, ErrorState, Loading, PageHeader, Panel, PanelHeader, Progress } from '@/components/ui/core';
+import { Avatar, EmptyState, ErrorState, Loading, PageHeader, Panel, PanelHeader, Progress } from '@/components/ui/core';
 import { HeadcountChart } from '@/components/data/charts';
 
 export function Dashboard() {

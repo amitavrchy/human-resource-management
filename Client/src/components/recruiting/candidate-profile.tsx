@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight, Download, FileText, Mail, MessageSquare, Save, Sparkles, Star, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Download, Mail, MessageSquare, Save, Sparkles, Star, Trash2, Upload } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Candidate, Stage } from '@/lib/types';
 import { canRecruit, dateLabel, isAdmin, label } from '@/lib/utils';
 import { useAction, useApi, useSession } from '@/hooks/use-api';
-import { Avatar, Badge, Button, EmptyState, ErrorState, Field, Loading, Modal, Panel, PanelHeader, Tabs } from '@/components/ui/core';
+import { Avatar, Badge, Button, ErrorState, Field, Loading, Modal, Panel, PanelHeader, Tabs } from '@/components/ui/core';
 import { HireDialog } from './job-form';
 import { stages } from './pipeline';
 
