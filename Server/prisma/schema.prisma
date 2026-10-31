@@ -137,9 +137,9 @@ model Employee {
   phone           String?
   title           String?
   departmentId    String?
-  department      Department?      @relation(fields: [departmentId], references: [id])
+  department      Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   locationId      String?
-  location        Location?        @relation(fields: [locationId], references: [id])
+  location        Location?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
   managerId       String?
   manager         Employee?        @relation("OrgTree", fields: [managerId], references: [id])
   reports         Employee[]       @relation("OrgTree")
@@ -218,17 +218,18 @@ model LeaveRequest {
 
 model Job {
   hiringManagerId String?
-  id             String       @id @default(cuid())
-  organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  title          String
-  department     String?
-  location       String?
-  descriptionMd  String
-  status         JobStatus    @default(DRAFT)
-  candidates     Candidate[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title           String
+  department      String?
+  location        String?
+  descriptionMd   String
+  status          JobStatus    @default(DRAFT)
+  candidates      Candidate[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
   @@index([organizationId, hiringManagerId])
 }
 
@@ -258,6 +259,7 @@ model Candidate {
 }
 
 model OnboardingTemplate {
+  isDefault      Boolean      @default(false)
   id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)

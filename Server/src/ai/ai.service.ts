@@ -31,8 +31,13 @@ export class AiService {
     } catch { return { available: false }; }
   }
   async jd(actor: Actor, dto: JdDto) {
-    requireRecruiting(actor, true);
-    const result = await this.call<{ markdown: string }>('/v1/jd/generate', dto);
+    requireRecruiting(actor);
+    if (actor.role === 'MANAGER') {
+      if (!dto.jobId) throw new BadRequestException('Choose one of your assigned roles to draft its description.');
+      await this.recruiting.job(actor, dto.jobId);
+    }
+    const { jobId: _jobId, ...request } = dto;
+    const result = await this.call<{ markdown: string }>('/v1/jd/generate', request);
     if (typeof result.markdown !== 'string' || !result.markdown.trim()) throw new ServiceUnavailableException('No description was returned. Please try again.');
     await this.db.auditLog.create({ data: { organizationId: actor.organizationId, actorUserId: actor.userId, action: 'ai.jd_generated', entityType: 'Job' } });
     return { markdown: result.markdown.slice(0, 30000) };

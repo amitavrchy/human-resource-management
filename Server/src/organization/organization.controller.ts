@@ -23,6 +23,7 @@ export class OrganizationController {
   @Post('onboarding-templates') template(@CurrentActor() a: Actor, @Body() d: TemplateDto) { return this.org.save(a, 'template', d); }
   @Patch('onboarding-templates/:id') updateTemplate(@CurrentActor() a: Actor, @Param('id') id: string, @Body() d: TemplateDto) { return this.org.save(a, 'template', d, id); }
   @Delete('onboarding-templates/:id') removeTemplate(@CurrentActor() a: Actor, @Param('id') id: string) { return this.org.remove(a, 'template', id); }
+  @Post('onboarding-templates/:id/default') defaultTemplate(@CurrentActor() a: Actor, @Param('id') id: string) { return this.org.defaultTemplate(a, id); }
   @Get('members') members(@CurrentActor() a: Actor) { return this.org.members(a); }
   @Post('members') member(@CurrentActor() a: Actor, @Body() d: MemberDto) { return this.org.createMember(a, d); }
   @Patch('members/:id/role') role(@CurrentActor() a: Actor, @Param('id') id: string, @Body() d: RoleDto) { return this.org.changeRole(a, id, d); }

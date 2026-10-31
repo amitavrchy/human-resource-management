@@ -2,12 +2,15 @@ import { type INestApplication, ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import type { Request, Response, NextFunction } from 'express';
+import { json, urlencoded } from 'express';
 import { ApiExceptionFilter } from './common/errors.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export function configureApp(app: INestApplication) {
   app.use(helmet());
   app.use(cookieParser());
+  app.use(json({ limit: '512kb' }));
+  app.use(urlencoded({ extended: false, limit: '512kb' }));
   const origins = (process.env.CLIENT_ORIGIN ?? 'http://localhost:3000').split(',').map(origin => origin.trim());
   app.enableCors({ origin: origins, credentials: true });
   app.use((req: Request, res: Response, next: NextFunction) => {

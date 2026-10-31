@@ -27,7 +27,7 @@ export class AuthService {
       const [firstName, ...rest] = dto.name.split(' ');
       await tx.employee.create({ data: { organizationId: org.id, membershipId: member.id, employeeNumber: 'EMP-0001', firstName, lastName: rest.join(' ') || firstName, workEmail: dto.email, title: 'Founder', status: 'ACTIVE', startDate: new Date() } });
       await tx.leavePolicy.createMany({ data: [{ organizationId: org.id, name: 'Annual leave', code: 'ANNUAL', annualDays: 20 }, { organizationId: org.id, name: 'Sick leave', code: 'SICK', annualDays: 10 }] });
-      await tx.onboardingTemplate.create({ data: { organizationId: org.id, name: 'Welcome aboard', tasksJson: [{ title: 'Set up your work account', sortOrder: 0 }, { title: 'Collect your laptop', sortOrder: 1 }, { title: 'Read the employee handbook', sortOrder: 2 }, { title: 'Complete your payroll details', sortOrder: 3 }] } });
+      await tx.onboardingTemplate.create({ data: { organizationId: org.id, name: 'Welcome aboard', isDefault: true, tasksJson: [{ title: 'Set up your work account', sortOrder: 0 }, { title: 'Collect your laptop', sortOrder: 1 }, { title: 'Read the employee handbook', sortOrder: 2 }, { title: 'Complete your payroll details', sortOrder: 3 }] } });
       await tx.auditLog.create({ data: { organizationId: org.id, actorUserId: user.id, action: 'organization.created', entityType: 'Organization', entityId: org.id } });
       return { userId: user.id, organizationId: org.id };
     });

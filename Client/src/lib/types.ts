@@ -11,7 +11,7 @@ export interface Employee {
   tasks?: Task[]; onboardingTasks?: Task[]; leaveHistory?: LeaveRequest[]; documents?: Document[]; privateAccess?: boolean;
 }
 export interface Paginated<T> { items: T[]; total: number; page: number; pages: number; limit?: number }
-export interface Metadata { departments: Named[]; locations: Location[]; policies: Policy[]; templates: { id: string; name: string; tasksJson: { title: string; sortOrder: number }[] }[] }
+export interface Metadata { departments: Named[]; locations: Location[]; policies: Policy[]; templates: { id: string; name: string; tasksJson: { title: string; sortOrder: number }[]; isDefault: boolean }[] }
 export interface Balance { id: string; policyId: string; year: number; balanceDays: number; pendingDays: number; policy: Policy }
 export interface LeaveRequest { id: string; employeeId: string; policyId: string; startDate: string; endDate: string; days: number; reason: string | null; status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'; createdAt: string; employee: Pick<Employee, 'id' | 'firstName' | 'lastName' | 'title' | 'department'>; policy: Policy }
 export type Stage = 'APPLIED' | 'SCREEN' | 'INTERVIEW' | 'OFFER' | 'HIRED' | 'REJECTED';

@@ -129,6 +129,7 @@ export class FeedbackDto {
   @IsInt() @Min(1) @Max(5) rating: number;
 }
 export class JdDto {
+  @IsOptional() @IsString() @Length(1, 100) jobId?: string;
   @IsString() @Length(2, 160) title: string;
   @IsString() @Length(1, 120) department: string;
   @IsString() @Length(1, 80) level: string;

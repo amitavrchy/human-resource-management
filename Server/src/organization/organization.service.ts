@@ -53,7 +53,13 @@ export class OrganizationService {
         if (await tx.leaveRequest.count({ where: { organizationId: actor.organizationId, policyId: id } })) throw new ConflictException('Policies with leave history cannot be deleted.');
         await tx.leavePolicy.delete({ where });
       }
-      if (kind === 'template') await tx.onboardingTemplate.delete({ where });
+      if (kind === 'template') {
+        const removed = await tx.onboardingTemplate.delete({ where });
+        if (removed.isDefault) {
+          const next = await tx.onboardingTemplate.findFirst({ where: { organizationId: actor.organizationId }, orderBy: { id: 'asc' } });
+          if (next) await tx.onboardingTemplate.update({ where: { id: next.id, organizationId: actor.organizationId }, data: { isDefault: true } });
+        }
+      }
       await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorUserId: actor.userId, action: `${kind}.deleted`, entityType: kind, entityId: id } });
       return { success: true };
     });
@@ -61,6 +67,16 @@ export class OrganizationService {
   members(actor: Actor) {
     requireAdmin(actor);
     return this.db.membership.findMany({ where: { organizationId: actor.organizationId }, select: { id: true, role: true, user: { select: { id: true, name: true, email: true } }, employee: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { id: 'asc' } });
+  }
+  async defaultTemplate(actor: Actor, id: string) {
+    requireAdmin(actor);
+    return serializable(this.db, async tx => {
+      await tx.onboardingTemplate.findFirstOrThrow({ where: { id, organizationId: actor.organizationId } });
+      await tx.onboardingTemplate.updateMany({ where: { organizationId: actor.organizationId, isDefault: true }, data: { isDefault: false } });
+      const template = await tx.onboardingTemplate.update({ where: { id, organizationId: actor.organizationId }, data: { isDefault: true } });
+      await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorUserId: actor.userId, action: 'template.default_changed', entityType: 'OnboardingTemplate', entityId: id } });
+      return template;
+    });
   }
   async createMember(actor: Actor, dto: MemberDto) {
     requireAdmin(actor);

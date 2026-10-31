@@ -53,7 +53,7 @@ export class PeopleService {
   async createInTransaction(tx: Prisma.TransactionClient, actor: Actor, dto: EmployeeDto) {
     const org = await tx.organization.update({ where: { id: actor.organizationId }, data: { employeeSequence: { increment: 1 } } });
     const employee = await tx.employee.create({ data: { ...this.employeeData(dto), firstName: dto.firstName, lastName: dto.lastName, workEmail: dto.workEmail, organizationId: actor.organizationId, employeeNumber: `EMP-${String(org.employeeSequence).padStart(4, '0')}` } });
-    const template = await tx.onboardingTemplate.findFirst({ where: { organizationId: actor.organizationId }, orderBy: { id: 'asc' } });
+    const template = await tx.onboardingTemplate.findFirst({ where: { organizationId: actor.organizationId }, orderBy: [{ isDefault: 'desc' }, { id: 'asc' }] });
     const tasks = (template?.tasksJson ?? [{ title: 'Set up your work account' }, { title: 'Collect your laptop' }, { title: 'Read the employee handbook' }, { title: 'Complete your payroll details' }]) as { title: string }[];
     await tx.onboardingTask.createMany({ data: tasks.map((task, sortOrder) => ({ organizationId: actor.organizationId, employeeId: employee.id, title: task.title, sortOrder })) });
     const policies = await tx.leavePolicy.findMany({ where: { organizationId: actor.organizationId } });
@@ -67,6 +67,15 @@ export class PeopleService {
       if (actor.employeeId !== id || Object.keys(dto).some(key => !['personalEmail', 'phone', 'emergencyName', 'emergencyPhone'].includes(key))) throw new BadRequestException('You may only update your own contact and emergency details.');
     }
     return serializable(this.db, async tx => {
+      const current = await tx.employee.findFirstOrThrow({ where: { id, organizationId: actor.organizationId } });
+      if (dto.status === 'TERMINATED') {
+        if (id === actor.employeeId) throw new ConflictException('You cannot archive your own employee record.');
+        const member = current.membershipId ? await tx.membership.findUnique({ where: { id: current.membershipId } }) : null;
+        if (member?.role === 'OWNER') throw new ConflictException('Transfer the owner role before archiving this employee.');
+      }
+      const start = dto.startDate ? dateOnly(dto.startDate) : current.startDate;
+      const end = dto.endDate ? dateOnly(dto.endDate) : dto.endDate === undefined ? current.endDate : null;
+      if (start && end && end < start) throw new BadRequestException('End date must follow start date.');
       await this.validateReferences(tx, actor, dto, id);
       const employee = await tx.employee.update({ where: { id, organizationId: actor.organizationId }, data: this.employeeData(dto) });
       await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorUserId: actor.userId, action: 'employee.updated', entityType: 'Employee', entityId: id, metaJson: { fields: Object.keys(dto) } } });
