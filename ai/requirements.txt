@@ -11,3 +11,5 @@ langchain-community
 chromadb
 sqlalchemy
 psycopg[binary]
+pypdf>=5,<7
+python-multipart>=0.0.20

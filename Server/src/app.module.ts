@@ -22,6 +22,8 @@ import { LifecycleController } from './lifecycle/lifecycle.controller.js';
 import { LifecycleService } from './lifecycle/lifecycle.service.js';
 import { DocumentsController } from './documents/documents.controller.js';
 import { DocumentsService } from './documents/documents.service.js';
+import { AiController } from './ai/ai.controller.js';
+import { AiService } from './ai/ai.service.js';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true, validate: (env: Record<string, unknown>) => {
@@ -30,8 +32,8 @@ import { DocumentsService } from './documents/documents.service.js';
     if (!env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
     return env;
   } }), JwtModule.register({}), PrismaModule],
-  controllers: [AppController, AuthController, PeopleController, OrganizationController, LeaveController, RecruitingController, LifecycleController, DocumentsController],
-  providers: [AppService, AuthService, AccessService, PeopleService, OrganizationService, LeaveService, RecruitingService, FilesService, LifecycleService, DocumentsService, { provide: APP_GUARD, useClass: SessionGuard }],
+  controllers: [AppController, AuthController, PeopleController, OrganizationController, LeaveController, RecruitingController, LifecycleController, DocumentsController, AiController],
+  providers: [AppService, AuthService, AccessService, PeopleService, OrganizationService, LeaveService, RecruitingService, FilesService, LifecycleService, DocumentsService, AiService, { provide: APP_GUARD, useClass: SessionGuard }],
 })
 export class AppModule {}
 

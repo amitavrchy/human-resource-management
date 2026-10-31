@@ -5,12 +5,20 @@ import { validateOrReject } from 'class-validator';
 import { CurrentActor, type Actor } from '../common/context.js';
 import { DocumentDto } from '../common/dto.js';
 import { DocumentsService } from './documents.service.js';
+import { AiService } from '../ai/ai.service.js';
 
 @Controller('documents')
 export class DocumentsController {
-  constructor(private readonly documents: DocumentsService) {}
+  constructor(private readonly documents: DocumentsService, private readonly ai: AiService) {}
   @Get() list(@CurrentActor() a: Actor) { return this.documents.list(a); }
-  @Post() create(@CurrentActor() a: Actor, @Body() d: DocumentDto) { return this.documents.create(a, d); }
+  @Post() async create(@CurrentActor() a: Actor, @Body() d: DocumentDto) {
+    const document = await this.documents.create(a, d);
+    if (document.isHandbook) {
+      try { await this.ai.ingest(a, document.id); return { ...document, ingestStatus: 'READY' }; }
+      catch { return { ...document, ingestStatus: 'FAILED' }; }
+    }
+    return document;
+  }
   @Post('upload') @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1 } }))
   async upload(@CurrentActor() a: Actor, @Body() body: Record<string, unknown>, @UploadedFile() file: Express.Multer.File) {
     // Multipart booleans arrive as strings. Validate after explicit conversion.
@@ -18,7 +26,12 @@ export class DocumentsController {
     const dto = plainToInstance(DocumentDto, { ...body, ...(body.isHandbook !== undefined ? { isHandbook: body.isHandbook === 'true' } : {}) });
     try { await validateOrReject(dto, { whitelist: true, forbidNonWhitelisted: true }); } catch { throw new BadRequestException('Check the document title, category and employee.'); }
     if (!file) throw new BadRequestException('Choose a file to upload.');
-    return this.documents.create(a, dto, file);
+    const document = await this.documents.create(a, dto, file);
+    if (document.isHandbook) {
+      try { await this.ai.ingest(a, document.id); return { ...document, ingestStatus: 'READY' }; }
+      catch { return { ...document, ingestStatus: 'FAILED' }; }
+    }
+    return document;
   }
   @Get(':id/download') async download(@CurrentActor() a: Actor, @Param('id') id: string) {
     const { stream, document } = await this.documents.download(a, id);
