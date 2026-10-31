@@ -11,7 +11,7 @@ export class LifecycleService {
   constructor(private readonly db: PrismaService, private readonly access: AccessService) {}
   async onboarding(actor: Actor, employeeId?: string) {
     if (employeeId) await this.access.employee(actor, employeeId);
-    return this.db.employee.findMany({ where: { ...(await this.access.employeeWhere(actor)), ...(employeeId ? { id: employeeId } : { status: 'ONBOARDING' }) }, select: { ...employeeSelect, onboardingTasks: { orderBy: { sortOrder: 'asc' } } }, orderBy: { startDate: 'desc' }, take: 200 });
+    return this.db.employee.findMany({ where: { ...(await this.access.employeeWhere(actor)), ...(employeeId ? { id: employeeId } : { status: { not: 'TERMINATED' }, OR: [{ status: 'ONBOARDING' }, { onboardingTasks: { some: {} } }] }) }, select: { ...employeeSelect, onboardingTasks: { orderBy: { sortOrder: 'asc' } } }, orderBy: { startDate: 'desc' }, take: 200 });
   }
   async task(actor: Actor, employeeId: string, dto: TaskDto) {
     await this.access.employee(actor, employeeId);

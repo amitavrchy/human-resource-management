@@ -127,4 +127,17 @@ export class RecruitingService {
     if (!candidate.resumeUrl) throw new NotFoundException('No resume uploaded.');
     return this.files.stream(candidate.resumeUrl);
   }
+  async removeCandidate(actor: Actor, id: string) {
+    requireRecruiting(actor, true);
+    await this.candidate(actor, id);
+    const removed = await serializable(this.db, async tx => {
+      const candidate = await tx.candidate.findFirstOrThrow({ where: { id, organizationId: actor.organizationId } });
+      if (candidate.stage === 'HIRED' || candidate.employeeId) throw new ConflictException('Hired candidates retain their hiring history.');
+      await tx.candidate.delete({ where: { id, organizationId: actor.organizationId } });
+      await tx.auditLog.create({ data: { organizationId: actor.organizationId, actorUserId: actor.userId, action: 'candidate.deleted', entityType: 'Candidate', entityId: id } });
+      return candidate;
+    });
+    if (removed.resumeUrl) await this.files.remove(removed.resumeUrl);
+    return { success: true };
+  }
 }

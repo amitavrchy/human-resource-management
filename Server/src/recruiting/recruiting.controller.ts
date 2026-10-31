@@ -15,6 +15,7 @@ export class RecruitingController {
   @Get('jobs/:id/candidates') async candidates(@CurrentActor() a: Actor, @Param('id') id: string) { return (await this.recruiting.job(a, id)).candidates; }
   @Post('jobs/:id/candidates') addCandidate(@CurrentActor() a: Actor, @Param('id') id: string, @Body() d: CandidateDto) { return this.recruiting.addCandidate(a, id, d); }
   @Get('candidates/:id') candidate(@CurrentActor() a: Actor, @Param('id') id: string) { return this.recruiting.candidate(a, id); }
+  @Delete('candidates/:id') removeCandidate(@CurrentActor() a: Actor, @Param('id') id: string) { return this.recruiting.removeCandidate(a, id); }
   @Patch('candidates/:id') updateCandidate(@CurrentActor() a: Actor, @Param('id') id: string, @Body() d: CandidateUpdateDto) { return this.recruiting.updateCandidate(a, id, d); }
   @Patch('candidates/:id/stage') stage(@CurrentActor() a: Actor, @Param('id') id: string, @Body() d: StageDto) { return this.recruiting.stage(a, id, d); }
   @Post('candidates/:id/hire') hire(@CurrentActor() a: Actor, @Param('id') id: string, @Body() d: HireDto) { return this.recruiting.hire(a, id, d); }
