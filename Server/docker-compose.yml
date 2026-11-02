@@ -1,15 +1,20 @@
+name: peopleos-development
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: hrm-system-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hrm_system
+      POSTGRES_USER: peopleos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Use --env-file ../.env after running scripts/init-env.mjs}
+      POSTGRES_DB: peopleos
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U peopleos -d peopleos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 volumes:
   pgdata:

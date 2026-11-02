@@ -1,0 +1,16 @@
+{
+  "name": "peopleos",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "setup:env": "node scripts/init-env.mjs",
+    "install:apps": "npm ci --prefix Server && npm ci --prefix Client",
+    "check": "npm --prefix Server run typecheck && npm --prefix Server run lint && npm --prefix Server run build && npm --prefix Server test && npm --prefix Client run lint && npm --prefix Client run build",
+    "test:api": "npm --prefix Server run test:e2e",
+    "test:browser": "npm --prefix Client run test:e2e",
+    "smoke:containers": "node scripts/container-smoke.mjs"
+  }
+}

@@ -1,41 +1,51 @@
 # PeopleOS delivery tracker
 
-Source of truth: `PROJECT_SPEC.md`. The checkout started with framework scaffolds. Stretch payroll, benefits, EOR and external integrations are out of scope.
+Implementation and local release verification completed on **2026-11-02** against `PROJECT_SPEC.md`. Payroll, benefits, EOR and external integrations remain stretch scope.
 
-- [x] Implement database schema, tenant scoping, cookie authentication and authorization
-- [x] Implement employee directory, profiles, org chart and organization settings
-- [x] Implement leave requests, transactional approvals and yearly balances
-- [x] Implement recruiting pipeline, screening integration and transactional hiring
-- [x] Implement onboarding, private documents and performance lite
-- [x] Implement FastAPI AI tools and tenant-scoped handbook retrieval
-- [x] Implement responsive application, command search and reduced-motion support
-- [x] Implement reports, audit trail and idempotent demo seed
-- [ ] Complete operational documentation, environment templates and deployment packaging
-- [ ] Complete database integration tests, security review and full browser verification
+- [x] Database schema, tenant isolation, cookie authentication and RBAC
+- [x] Directory, private profiles/custom fields and cycle-safe org chart
+- [x] Leave requests, transactional approvals, yearly balances and calendar
+- [x] Recruiting/templates, private resumes, screening and idempotent hiring
+- [x] Onboarding, documents, performance lite, reports and audit trail
+- [x] AI tools and persistent tenant/document-scoped handbook retrieval
+- [x] Responsive UI, minimum 14px text, command search and reduced motion
+- [x] Organization settings, membership lifecycle and idempotent demo seed
+- [x] Environment initialization, production containers, CI and operations docs
+- [x] Integration, security and desktop/mobile browser verification
 
-Implementation checkmarks do not imply production acceptance. Work stopped at the user's request on 2026-10-31 so the current checkpoint could be pushed.
+## Verified checks
 
-## Verification completed
+| Check                               | Result                                                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| NestJS / Next.js production builds  | Passed                                                                                                 |
+| Type checks and application linters | Passed; no lint findings                                                                               |
+| Server unit tests                   | 5 passed                                                                                               |
+| Real PostgreSQL integration tests   | 18 passed                                                                                              |
+| Python AI tests / Ruff              | 11 passed / lint passed                                                                                |
+| Production-stack browser workflows  | 11 passed                                                                                              |
+| Desktop/mobile layout               | 13 primary routes at 1440px and 390px; visible text at least 14px; no page overflow or uncaught errors |
+| Docker build, migrations and health | Passed for the complete stack                                                                          |
+| Demo seed                           | Ran twice without duplicate records                                                                    |
+| Container smoke                     | Secure HttpOnly sessions, assets, onboarding and private file I/O passed                               |
+| PostgreSQL backup/restore           | Separate QA restore succeeded; organization, employee and membership counts matched                    |
+| Node production dependency audits   | Zero findings                                                                                          |
+| Python audit                        | Passed with the explicit Chroma exception below                                                        |
+| Workflow syntax                     | actionlint passed                                                                                      |
 
-- Full Next.js production build passed for all implemented routes before the final template/manager-scope changes; the latest client typecheck also passes.
-- Latest NestJS build passes.
-- Five server unit tests and five Python AI service tests pass.
-- Three Prisma migrations applied successfully to an isolated PostgreSQL 16 QA database; demo seed ran successfully.
-- Browser smoke check: demo login and dashboard load; no visible dashboard text below 14px at the tested desktop size.
-- Client lint passed before the final template/manager-scope changes.
+Browser checks cover registration/login/workspace selection; member roles/revocation; employee edits/search/export; command-search keyboard controls; leave approval/calendar/cancellation; resume download with session refresh; feedback/hire/onboarding; documents; deterministic AI draft/batch/citation rendering; goals/reviews; settings/templates and persisted theme.
 
-## Resume here
+## Verification boundaries
 
-1. Run fresh client build/lint and server checks after this checkpoint. Expand real-database integration coverage for cross-tenant access, manager permissions, duplicate/concurrent leave approvals, idempotent hiring, private downloads, session rotation and onboarding completion.
-2. Test every route and form in a browser at desktop/mobile sizes, including command-search keyboard navigation and reduced motion. The dashboard is the only page smoke-tested so far.
-3. Test AI persistence, citations and tenant allowlists with mocked providers. The user explicitly chose key-free integration testing; no OpenAI key is configured and no live model/embedding call has been verified.
-4. Update the environment examples: both NestJS and FastAPI require the same random `AI_SERVICE_TOKEN` (at least 32 characters); NestJS requires a random `JWT_SECRET`. FastAPI also needs `OPENAI_API_KEY` for model and embedding requests.
-5. Replace scaffold READMEs and finish Dockerfiles/Compose, health checks, deployment instructions and CI. The current Docker files remain starter material, not a verified deployment.
-6. Address remaining development-tool dependency advisories and format the new source for review. The Prisma 6 toolchain now overrides `deepmerge-ts` with its patched version; generation/build succeeded with that change. Do not blindly apply breaking audit fixes.
+The user requested **key-free AI integration tests**. API tests use a private provider double, browser AI rendering uses controlled responses, and Python tests use real persistent Chroma with deterministic vectors/model responses. No live OpenAI generation or embedding call has been verified. Configure a provider key and follow [docs/TESTING.md](docs/TESTING.md) to verify model availability and answer quality.
 
-Demo seeding requires an explicit `DEMO_PASSWORD` (at least 12 characters); run migrations before `npm run db:seed` from `Server/`. The demo owner's email is `demo@peopleos.app`. Runtime files, QA database data, local credentials and screenshots under `.local/` are intentionally ignored and not pushed.
+Chroma 1.5.9 has upstream advisories with no published fixed version at review time. The private embedded deployment disables embedding plugins and enforces tenant/document filtering. Its version-scoped exception expires **2026-12-02**; see [docs/SECURITY.md](docs/SECURITY.md). This is a mitigation assessment, not an upstream fix. Remaining npm advisories concern development-only Nest CLI/ESLint dependencies.
 
-## Git
+Docker was verified locally. Actual hosting still requires TLS, secrets, backups and monitoring configured for that environment. Automated checks do not constitute an independent penetration test or compliance certification.
 
-Remote: https://github.com/amitavrchy/human-resource-management.git · branch: `main`.
-Milestone commits have been pushed throughout implementation. The final checkpoint includes the in-progress hardening changes and this handoff.
+## Run and maintain
+
+See [README.md](README.md), [operations](docs/OPERATIONS.md), [architecture](docs/ARCHITECTURE.md) and [testing](docs/TESTING.md). CI runs application, AI and container checks for pushes to `main` and pull requests.
+
+Credentials, QA data, runtime files, traces and screenshots under `.local/` are ignored and not published. Demo seeding requires an explicit `DEMO_PASSWORD`; sign-in uses `demo@peopleos.app`.
+
+Git remote: https://github.com/amitavrchy/human-resource-management.git — branch `main`. Milestones are committed and pushed separately.
