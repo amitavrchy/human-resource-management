@@ -1,11 +1,39 @@
 import { Type, Transform } from 'class-transformer';
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsEmail, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, Length, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { PartialType } from '@nestjs/swagger';
-import { CandidateStage, EmploymentStatus, JobStatus, OnboardingTaskStatus, OrgRole } from '@prisma/client';
+import {
+  CandidateStage,
+  EmploymentStatus,
+  JobStatus,
+  OnboardingTaskStatus,
+  OrgRole,
+} from '@prisma/client';
 
-const trim = ({ value }: { value: unknown }) => typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim() : value;
 export class LoginDto {
-  @IsEmail() @MaxLength(254) @Transform(({ value }: { value: string }) => value?.trim().toLowerCase()) email: string;
+  @IsEmail()
+  @MaxLength(254)
+  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
+  email: string;
   @IsString() @Length(1, 72) password: string;
   @IsOptional() @IsString() @MaxLength(100) organizationSlug?: string;
 }
@@ -13,10 +41,14 @@ export class RegisterDto extends LoginDto {
   @IsString() @Length(12, 72) declare password: string;
   @IsString() @Transform(trim) @Length(2, 100) name: string;
   @IsString() @Transform(trim) @Length(2, 120) organizationName: string;
-  @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @Length(3, 60) slug: string;
+  @IsString()
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  @Length(3, 60)
+  slug: string;
 }
 export class PageDto {
-  @IsOptional() @IsIn(['firstName', 'title', 'startDate', 'status']) sortBy?: 'firstName' | 'title' | 'startDate' | 'status';
+  @IsOptional() @IsIn(['firstName', 'title', 'startDate', 'status']) sortBy?:
+    'firstName' | 'title' | 'startDate' | 'status';
   @IsOptional() @IsIn(['asc', 'desc']) sortOrder?: 'asc' | 'desc';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100000) page = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;
@@ -28,7 +60,10 @@ export class PageDto {
 export class EmployeeDto {
   @IsString() @Transform(trim) @Length(1, 80) firstName: string;
   @IsString() @Transform(trim) @Length(1, 80) lastName: string;
-  @IsEmail() @MaxLength(254) @Transform(({ value }: { value: string }) => value?.trim().toLowerCase()) workEmail: string;
+  @IsEmail()
+  @MaxLength(254)
+  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
+  workEmail: string;
   @IsOptional() @IsEmail() personalEmail?: string;
   @IsOptional() @IsString() @MaxLength(40) phone?: string;
   @IsOptional() @IsString() @MaxLength(120) title?: string;
@@ -74,12 +109,16 @@ export class JobDto {
 export class UpdateJobDto extends PartialType(JobDto) {}
 export class CandidateDto {
   @IsString() @Transform(trim) @Length(2, 120) name: string;
-  @IsEmail() @Transform(({ value }: { value: string }) => value?.trim().toLowerCase()) email: string;
+  @IsEmail()
+  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
+  email: string;
   @IsOptional() @IsString() @MaxLength(60000) resumeText?: string;
   @IsOptional() @IsString() @MaxLength(10000) notes?: string;
 }
 export class CandidateUpdateDto extends PartialType(CandidateDto) {}
-export class StageDto { @IsEnum(CandidateStage) stage: CandidateStage; }
+export class StageDto {
+  @IsEnum(CandidateStage) stage: CandidateStage;
+}
 export class HireDto {
   @IsOptional() @IsString() @MaxLength(100) departmentId?: string;
   @IsOptional() @IsString() @MaxLength(100) locationId?: string;
@@ -94,7 +133,12 @@ export class TemplateTaskDto {
   @IsString() @Transform(trim) @Length(1, 200) title: string;
 }
 export class TemplateDto extends NameDto {
-  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(50) @ValidateNested({ each: true }) @Type(() => TemplateTaskDto) tasks: TemplateTaskDto[];
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => TemplateTaskDto)
+  tasks: TemplateTaskDto[];
 }
 export class DocumentDto {
   @IsString() @Transform(trim) @Length(2, 160) title: string;
@@ -108,7 +152,9 @@ export class GoalDto {
   @IsString() @Transform(trim) @Length(3, 200) title: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) dueDate?: string;
 }
-export class GoalProgressDto { @IsInt() @Min(0) @Max(100) progress: number; }
+export class GoalProgressDto {
+  @IsInt() @Min(0) @Max(100) progress: number;
+}
 export class ReviewDto {
   @IsString() @Length(1, 100) employeeId: string;
   @Matches(/^\d{4}-Q[1-4]$/) quarter: string;
@@ -118,12 +164,16 @@ export class ReviewDto {
 }
 export class MemberDto {
   @IsString() @Transform(trim) @Length(2, 100) name: string;
-  @IsEmail() @Transform(({ value }: { value: string }) => value?.trim().toLowerCase()) email: string;
+  @IsEmail()
+  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
+  email: string;
   @IsString() @Length(12, 72) password: string;
   @IsEnum(OrgRole) role: OrgRole;
   @IsOptional() @IsString() @MaxLength(100) employeeId?: string;
 }
-export class RoleDto { @IsEnum(OrgRole) role: OrgRole; }
+export class RoleDto {
+  @IsEnum(OrgRole) role: OrgRole;
+}
 export class FeedbackDto {
   @IsString() @Length(3, 3000) comment: string;
   @IsInt() @Min(1) @Max(5) rating: number;
@@ -133,12 +183,22 @@ export class JdDto {
   @IsString() @Length(2, 160) title: string;
   @IsString() @Length(1, 120) department: string;
   @IsString() @Length(1, 80) level: string;
-  @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) @MaxLength(200, { each: true }) mustHaves: string[];
+  @IsArray()
+  @ArrayMaxSize(30)
+  @IsString({ each: true })
+  @MaxLength(200, { each: true })
+  mustHaves: string[];
   @IsIn(['professional', 'friendly', 'concise']) tone: string;
 }
-export class ChatDto { @IsString() @Transform(trim) @Length(2, 3000) message: string; }
-export class ScreenDto { @IsString() @Length(1, 100) candidateId: string; }
-export class IngestDto { @IsString() @Length(1, 100) documentId: string; }
+export class ChatDto {
+  @IsString() @Transform(trim) @Length(2, 3000) message: string;
+}
+export class ScreenDto {
+  @IsString() @Length(1, 100) candidateId: string;
+}
+export class IngestDto {
+  @IsString() @Length(1, 100) documentId: string;
+}
 export class PasswordDto {
   @IsString() @Length(1, 72) currentPassword: string;
   @IsString() @Length(12, 72) newPassword: string;

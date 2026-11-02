@@ -1,9 +1,131 @@
 'use client';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { useId } from 'react';
 
-export function HeadcountChart({ data, small = false }: { data: { month: string; count: number }[]; small?: boolean }) {
+export function HeadcountChart({
+  data,
+  small = false,
+}: {
+  data: { month: string; count: number }[];
+  small?: boolean;
+}) {
   const id = useId().replace(/:/g, '');
-  return <ResponsiveContainer width="100%" height="100%" minWidth={0}><AreaChart data={data} margin={small ? { top: 3, right: 2, left: 2, bottom: 2 } : { top: 25, right: 18, left: -20, bottom: 0 }} accessibilityLayer><defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#8a7ee6" stopOpacity={small ? 0.16 : 0.14} /><stop offset="100%" stopColor="#8a7ee6" stopOpacity={0} /></linearGradient></defs>{!small && <><CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" /><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'var(--muted)', fontSize: 14 }} dy={8} /><YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: 'var(--muted)', fontSize: 14 }} /><Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, color: 'var(--ink)' }} /></>}<Area type="monotone" dataKey="count" name="People" stroke="#8270db" strokeWidth={small ? 1.7 : 2.3} fill={`url(#${id})`} isAnimationActive={!small} animationDuration={400} /></AreaChart></ResponsiveContainer>;
+  return (
+    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      <AreaChart
+        data={data}
+        margin={
+          small
+            ? { top: 3, right: 2, left: 2, bottom: 2 }
+            : { top: 25, right: 18, left: -20, bottom: 0 }
+        }
+        accessibilityLayer
+      >
+        <defs>
+          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#8a7ee6" stopOpacity={small ? 0.16 : 0.14} />
+            <stop offset="100%" stopColor="#8a7ee6" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        {!small && (
+          <>
+            <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" />
+            <XAxis
+              dataKey="month"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: 'var(--muted)', fontSize: 14 }}
+              dy={8}
+            />
+            <YAxis
+              allowDecimals={false}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: 'var(--muted)', fontSize: 14 }}
+            />
+            <Tooltip
+              contentStyle={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                fontSize: 14,
+                color: 'var(--ink)',
+              }}
+            />
+          </>
+        )}
+        <Area
+          type="monotone"
+          dataKey="count"
+          name="People"
+          stroke="#8270db"
+          strokeWidth={small ? 1.7 : 2.3}
+          fill={`url(#${id})`}
+          isAnimationActive={!small}
+          animationDuration={400}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
 }
-export function CountBarChart({ data, dataKey = 'count', color = '#8d80df' }: { data: { name: string; [key: string]: string | number }[]; dataKey?: string; color?: string }) { return <ResponsiveContainer width="100%" height="100%" minWidth={0}><BarChart data={data} margin={{ top: 10, right: 8, left: -20, bottom: 15 }} accessibilityLayer><CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" /><XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--muted)', fontSize: 14 }} interval={0} /><YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: 'var(--muted)', fontSize: 14 }} /><Tooltip cursor={{ fill: 'var(--surface-alt)' }} contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, color: 'var(--ink)' }} /><Bar dataKey={dataKey} fill={color} radius={[5, 5, 0, 0]} maxBarSize={44} animationDuration={400} /></BarChart></ResponsiveContainer>; }
+export function CountBarChart({
+  data,
+  dataKey = 'count',
+  color = '#8d80df',
+}: {
+  data: { name: string; [key: string]: string | number }[];
+  dataKey?: string;
+  color?: string;
+}) {
+  return (
+    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      <BarChart
+        data={data}
+        margin={{ top: 10, right: 8, left: -20, bottom: 15 }}
+        accessibilityLayer
+      >
+        <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" />
+        <XAxis
+          dataKey="name"
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: 'var(--muted)', fontSize: 14 }}
+          interval={0}
+        />
+        <YAxis
+          allowDecimals={false}
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: 'var(--muted)', fontSize: 14 }}
+        />
+        <Tooltip
+          cursor={{ fill: 'var(--surface-alt)' }}
+          contentStyle={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            fontSize: 14,
+            color: 'var(--ink)',
+          }}
+        />
+        <Bar
+          dataKey={dataKey}
+          fill={color}
+          radius={[5, 5, 0, 0]}
+          maxBarSize={44}
+          animationDuration={400}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}

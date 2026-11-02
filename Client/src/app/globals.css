@@ -1,6 +1,12 @@
-@import "tailwindcss";
-@import "./design-system.css";
-@import "./workspace.css";
-@import "./public-pages.css";
-@import "./responsive.css";
-@theme inline{--color-background:var(--bg);--color-foreground:var(--ink);--font-sans:var(--font-geist-sans);--text-xs:14px;--text-sm:14px}
+@import 'tailwindcss';
+@import './design-system.css';
+@import './workspace.css';
+@import './public-pages.css';
+@import './responsive.css';
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-geist-sans);
+  --text-xs: 14px;
+  --text-sm: 14px;
+}

@@ -6,20 +6,219 @@ import type { Employee, Metadata } from '@/lib/types';
 import { fullName, isAdmin } from '@/lib/utils';
 import { Button, Field, Modal } from '@/components/ui/core';
 
-type Values = Record<'firstName' | 'lastName' | 'workEmail' | 'personalEmail' | 'phone' | 'title' | 'departmentId' | 'locationId' | 'managerId' | 'status' | 'startDate' | 'endDate' | 'birthDate' | 'emergencyName' | 'emergencyPhone', string>;
-export function EmployeeDialog({ open, onOpenChange, employee }: { open: boolean; onOpenChange: (value: boolean) => void; employee?: Employee }) {
-  return <Modal open={open} onOpenChange={onOpenChange} title={employee ? 'A few details, up to date.' : 'Make room for someone great.'} description={employee ? 'Keep this employee record accurate and useful.' : 'Add a teammate. Their onboarding checklist is created automatically.'} wide><EmployeeForm key={employee?.id ?? 'new'} employee={employee} close={() => onOpenChange(false)} /></Modal>;
+type Values = Record<
+  | 'firstName'
+  | 'lastName'
+  | 'workEmail'
+  | 'personalEmail'
+  | 'phone'
+  | 'title'
+  | 'departmentId'
+  | 'locationId'
+  | 'managerId'
+  | 'status'
+  | 'startDate'
+  | 'endDate'
+  | 'birthDate'
+  | 'emergencyName'
+  | 'emergencyPhone',
+  string
+>;
+export function EmployeeDialog({
+  open,
+  onOpenChange,
+  employee,
+}: {
+  open: boolean;
+  onOpenChange: (value: boolean) => void;
+  employee?: Employee;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={employee ? 'A few details, up to date.' : 'Make room for someone great.'}
+      description={
+        employee
+          ? 'Keep this employee record accurate and useful.'
+          : 'Add a teammate. Their onboarding checklist is created automatically.'
+      }
+      wide
+    >
+      <EmployeeForm
+        key={employee?.id ?? 'new'}
+        employee={employee}
+        close={() => onOpenChange(false)}
+      />
+    </Modal>
+  );
 }
 function EmployeeForm({ employee, close }: { employee?: Employee; close: () => void }) {
   const { data: session } = useSession();
   const admin = isAdmin(session?.role);
   const meta = useApi<Metadata>('/organization/metadata');
   const people = useApi<Employee[]>('/employees/org-tree', admin);
-  const { register, handleSubmit, formState: { errors } } = useForm<Values>({ defaultValues: Object.fromEntries(['firstName', 'lastName', 'workEmail', 'personalEmail', 'phone', 'title', 'departmentId', 'locationId', 'managerId', 'status', 'startDate', 'endDate', 'birthDate', 'emergencyName', 'emergencyPhone'].map(key => [key, key === 'status' ? employee?.status ?? 'ONBOARDING' : String((employee as unknown as Record<string, unknown> | undefined)?.[key] ?? '').slice(0, ['startDate', 'endDate', 'birthDate'].includes(key) ? 10 : undefined)])) });
-  const save = useAction(async (values: Values) => {
-    const keys = admin ? Object.keys(values) : ['personalEmail', 'phone', 'emergencyName', 'emergencyPhone'];
-    const data = Object.fromEntries(keys.filter(key => employee || values[key as keyof Values] !== '').map(key => [key, values[key as keyof Values] || (['personalEmail', 'birthDate', 'startDate', 'endDate'].includes(key) ? null : '')]));
-    return (await (employee ? api.patch(`/employees/${employee.id}`, data) : api.post('/employees', data))).data;
-  }, { success: employee ? 'Employee details updated.' : 'Your new teammate is in. Onboarding is ready.', onSuccess: close });
-  return <form onSubmit={handleSubmit(values => save.mutate(values))}><div className="form-grid">{admin && <><Field label="First name" error={errors.firstName?.message}><input autoComplete="given-name" {...register('firstName', { required: 'Enter a first name.', maxLength: 80 })} /></Field><Field label="Last name" error={errors.lastName?.message}><input autoComplete="family-name" {...register('lastName', { required: 'Enter a last name.', maxLength: 80 })} /></Field><Field label="Work email" className="full" error={errors.workEmail?.message}><input type="email" {...register('workEmail', { required: 'Enter a work email.' })} /></Field><Field label="Job title"><input maxLength={120} {...register('title')} /></Field><Field label="Department"><select {...register('departmentId')}><option value="">Unassigned</option>{meta.data?.departments.map(dept => <option value={dept.id} key={dept.id}>{dept.name}</option>)}</select></Field><Field label="Location"><select {...register('locationId')}><option value="">Unassigned</option>{meta.data?.locations.map(location => <option value={location.id} key={location.id}>{location.name}</option>)}</select></Field><Field label="Reports to"><select {...register('managerId')}><option value="">No manager</option>{people.data?.filter(person => person.id !== employee?.id).map(person => <option key={person.id} value={person.id}>{fullName(person)}</option>)}</select></Field><Field label="Start date"><input type="date" {...register('startDate')} /></Field><Field label="Employment status"><select {...register('status')}><option value="ONBOARDING">Onboarding</option><option value="ACTIVE">Active</option><option value="LEAVE">On leave</option><option value="TERMINATED">Archived</option></select></Field>{employee && <Field label="End date"><input type="date" {...register('endDate')} /></Field>}<Field label="Date of birth"><input type="date" max={new Date().toISOString().slice(0, 10)} {...register('birthDate')} /></Field></>}<Field label="Personal email"><input type="email" {...register('personalEmail')} /></Field><Field label="Phone number"><input type="tel" maxLength={40} {...register('phone')} /></Field><Field label="Emergency contact name"><input maxLength={100} {...register('emergencyName')} /></Field><Field label="Emergency phone"><input type="tel" maxLength={40} {...register('emergencyPhone')} /></Field></div><div className="dialog-footer"><Button type="button" variant="secondary" onClick={close}>Cancel</Button><Button type="submit" loading={save.isPending}>{employee ? 'Save changes' : 'Add teammate'}</Button></div></form>;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Values>({
+    defaultValues: Object.fromEntries(
+      [
+        'firstName',
+        'lastName',
+        'workEmail',
+        'personalEmail',
+        'phone',
+        'title',
+        'departmentId',
+        'locationId',
+        'managerId',
+        'status',
+        'startDate',
+        'endDate',
+        'birthDate',
+        'emergencyName',
+        'emergencyPhone',
+      ].map((key) => [
+        key,
+        key === 'status'
+          ? (employee?.status ?? 'ONBOARDING')
+          : String((employee as unknown as Record<string, unknown> | undefined)?.[key] ?? '').slice(
+              0,
+              ['startDate', 'endDate', 'birthDate'].includes(key) ? 10 : undefined,
+            ),
+      ]),
+    ),
+  });
+  const save = useAction(
+    async (values: Values) => {
+      const keys = admin
+        ? Object.keys(values)
+        : ['personalEmail', 'phone', 'emergencyName', 'emergencyPhone'];
+      const data = Object.fromEntries(
+        keys
+          .filter((key) => employee || values[key as keyof Values] !== '')
+          .map((key) => [
+            key,
+            values[key as keyof Values] ||
+              (['personalEmail', 'birthDate', 'startDate', 'endDate'].includes(key) ? null : ''),
+          ]),
+      );
+      return (
+        await (employee
+          ? api.patch(`/employees/${employee.id}`, data)
+          : api.post('/employees', data))
+      ).data;
+    },
+    {
+      success: employee
+        ? 'Employee details updated.'
+        : 'Your new teammate is in. Onboarding is ready.',
+      onSuccess: close,
+    },
+  );
+  return (
+    <form onSubmit={handleSubmit((values) => save.mutate(values))}>
+      <div className="form-grid">
+        {admin && (
+          <>
+            <Field label="First name" error={errors.firstName?.message}>
+              <input
+                autoComplete="given-name"
+                {...register('firstName', { required: 'Enter a first name.', maxLength: 80 })}
+              />
+            </Field>
+            <Field label="Last name" error={errors.lastName?.message}>
+              <input
+                autoComplete="family-name"
+                {...register('lastName', { required: 'Enter a last name.', maxLength: 80 })}
+              />
+            </Field>
+            <Field label="Work email" className="full" error={errors.workEmail?.message}>
+              <input type="email" {...register('workEmail', { required: 'Enter a work email.' })} />
+            </Field>
+            <Field label="Job title">
+              <input maxLength={120} {...register('title')} />
+            </Field>
+            <Field label="Department">
+              <select {...register('departmentId')}>
+                <option value="">Unassigned</option>
+                {meta.data?.departments.map((dept) => (
+                  <option value={dept.id} key={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Location">
+              <select {...register('locationId')}>
+                <option value="">Unassigned</option>
+                {meta.data?.locations.map((location) => (
+                  <option value={location.id} key={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Reports to">
+              <select {...register('managerId')}>
+                <option value="">No manager</option>
+                {people.data
+                  ?.filter((person) => person.id !== employee?.id)
+                  .map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {fullName(person)}
+                    </option>
+                  ))}
+              </select>
+            </Field>
+            <Field label="Start date">
+              <input type="date" {...register('startDate')} />
+            </Field>
+            <Field label="Employment status">
+              <select {...register('status')}>
+                <option value="ONBOARDING">Onboarding</option>
+                <option value="ACTIVE">Active</option>
+                <option value="LEAVE">On leave</option>
+                <option value="TERMINATED">Archived</option>
+              </select>
+            </Field>
+            {employee && (
+              <Field label="End date">
+                <input type="date" {...register('endDate')} />
+              </Field>
+            )}
+            <Field label="Date of birth">
+              <input
+                type="date"
+                max={new Date().toISOString().slice(0, 10)}
+                {...register('birthDate')}
+              />
+            </Field>
+          </>
+        )}
+        <Field label="Personal email">
+          <input type="email" {...register('personalEmail')} />
+        </Field>
+        <Field label="Phone number">
+          <input type="tel" maxLength={40} {...register('phone')} />
+        </Field>
+        <Field label="Emergency contact name">
+          <input maxLength={100} {...register('emergencyName')} />
+        </Field>
+        <Field label="Emergency phone">
+          <input type="tel" maxLength={40} {...register('emergencyPhone')} />
+        </Field>
+      </div>
+      <div className="dialog-footer">
+        <Button type="button" variant="secondary" onClick={close}>
+          Cancel
+        </Button>
+        <Button type="submit" loading={save.isPending}>
+          {employee ? 'Save changes' : 'Add teammate'}
+        </Button>
+      </div>
+    </form>
+  );
 }

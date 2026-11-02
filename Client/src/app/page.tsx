@@ -1,9 +1,155 @@
 import Link from 'next/link';
-import { ArrowRight, ArrowUpRight, BriefcaseBusiness, CalendarDays, CheckCheck, House, Network, Sparkles, Users } from 'lucide-react';
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BriefcaseBusiness,
+  CalendarDays,
+  CheckCheck,
+  House,
+  Network,
+  Sparkles,
+  Users,
+} from 'lucide-react';
 import { Brand } from '@/components/layout/app-shell';
 import { Avatar, Badge } from '@/components/ui/core';
 
 export default function Home() {
-  return <div className="marketing"><header className="marketing-nav"><Brand /><div><a href="#features" className="marketing-nav-link">Why PeopleOS</a><Link href="/login">Sign in</Link><Link href="/register" className="btn btn-primary">Get started <ArrowUpRight size={17} /></Link></div></header><main><section className="marketing-hero"><span className="hero-pill"><Sparkles size={15} />People first. Busywork last.</span><h1>A better workday<br />starts with <span>your people.</span></h1><p>Bring your people, hiring and everyday HR together in one calm, connected workspace. Make room for what matters.</p><div className="hero-actions"><Link href="/register" className="btn btn-primary">Start your workspace <ArrowRight size={18} /></Link><Link href="/login" className="btn btn-secondary">Open PeopleOS</Link></div></section><section className="marketing-preview" aria-label="Illustrative PeopleOS workspace preview"><div className="preview-window"><div className="preview-sidebar"><Brand />{[[House, 'Overview'], [Users, 'People'], [Network, 'Org chart'], [CalendarDays, 'Time off'], [BriefcaseBusiness, 'Recruiting'], [CheckCheck, 'Onboarding']].map(([Icon, name], i) => { const PreviewIcon = Icon as typeof House; return <div className={`preview-nav-item ${i === 0 ? 'active' : ''}`} key={String(name)}><PreviewIcon size={17} />{String(name)}</div>; })}</div><div className="preview-body"><div className="eyebrow">A WORKSPACE THAT FEELS LIKE HOME</div><h2>Good things grow together.</h2><p>A clear view of your team. A little more breathing room.</p><div className="preview-metrics">{[['One home', 'Your people'], ['More clarity', 'Less admin'], ['Better starts', 'Smoother onboarding']].map(([value, text]) => <div className="preview-metric" key={value}><span>{text}</span><strong>{value}</strong></div>)}</div><div className="preview-people"><Avatar name="Maya Patel" size="lg" /><div><strong>A warm welcome to your newest teammate.</strong><small>A thoughtful first day starts before day one.</small></div><Badge value="onboarding" /></div><p className="muted" style={{ marginTop: 16 }}>An illustrative preview. Your workspace starts with your own team.</p></div></div></section><section id="features" className="marketing-feature-grid">{[{ icon: Users, title: 'Know your people.', text: 'A connected directory, rich employee profiles and an org chart that makes every connection clear.' }, { icon: CalendarDays, title: 'Make space for life.', text: 'Simple time-off requests, clear balances and approvals that keep everyone in the loop.' }, { icon: BriefcaseBusiness, title: 'Build your next chapter.', text: 'Keep hiring moving from application to offer, then give every new teammate a thoughtful start.' }, { icon: Sparkles, title: 'A helpful second hand.', text: 'Draft job descriptions, review documented skills and find answers in your company handbook.' }].map(feature => <div key={feature.title}><span className="feature-icon"><feature.icon size={23} /></span><h3>{feature.title}</h3><p>{feature.text}</p></div>)}</section><section className="marketing-cta"><h2>Less busywork. More possibility.</h2><p>Give your people a workspace they’ll feel good about.</p><Link className="btn btn-primary" href="/register">Create your workspace <ArrowRight size={17} /></Link></section></main><footer className="marketing-footer"><Brand /><span>People ops without the busywork.</span><Link className="text-link" href="/login">Your workspace <ArrowUpRight size={16} /></Link></footer></div>;
+  return (
+    <div className="marketing">
+      <header className="marketing-nav">
+        <Brand />
+        <div>
+          <a href="#features" className="marketing-nav-link">
+            Why PeopleOS
+          </a>
+          <Link href="/login">Sign in</Link>
+          <Link href="/register" className="btn btn-primary">
+            Get started <ArrowUpRight size={17} />
+          </Link>
+        </div>
+      </header>
+      <main>
+        <section className="marketing-hero">
+          <span className="hero-pill">
+            <Sparkles size={15} />
+            People first. Busywork last.
+          </span>
+          <h1>
+            A better workday
+            <br />
+            starts with <span>your people.</span>
+          </h1>
+          <p>
+            Bring your people, hiring and everyday HR together in one calm, connected workspace.
+            Make room for what matters.
+          </p>
+          <div className="hero-actions">
+            <Link href="/register" className="btn btn-primary">
+              Start your workspace <ArrowRight size={18} />
+            </Link>
+            <Link href="/login" className="btn btn-secondary">
+              Open PeopleOS
+            </Link>
+          </div>
+        </section>
+        <section className="marketing-preview" aria-label="Illustrative PeopleOS workspace preview">
+          <div className="preview-window">
+            <div className="preview-sidebar">
+              <Brand />
+              {[
+                [House, 'Overview'],
+                [Users, 'People'],
+                [Network, 'Org chart'],
+                [CalendarDays, 'Time off'],
+                [BriefcaseBusiness, 'Recruiting'],
+                [CheckCheck, 'Onboarding'],
+              ].map(([Icon, name], i) => {
+                const PreviewIcon = Icon as typeof House;
+                return (
+                  <div className={`preview-nav-item ${i === 0 ? 'active' : ''}`} key={String(name)}>
+                    <PreviewIcon size={17} />
+                    {String(name)}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="preview-body">
+              <div className="eyebrow">A WORKSPACE THAT FEELS LIKE HOME</div>
+              <h2>Good things grow together.</h2>
+              <p>A clear view of your team. A little more breathing room.</p>
+              <div className="preview-metrics">
+                {[
+                  ['One home', 'Your people'],
+                  ['More clarity', 'Less admin'],
+                  ['Better starts', 'Smoother onboarding'],
+                ].map(([value, text]) => (
+                  <div className="preview-metric" key={value}>
+                    <span>{text}</span>
+                    <strong>{value}</strong>
+                  </div>
+                ))}
+              </div>
+              <div className="preview-people">
+                <Avatar name="Maya Patel" size="lg" />
+                <div>
+                  <strong>A warm welcome to your newest teammate.</strong>
+                  <small>A thoughtful first day starts before day one.</small>
+                </div>
+                <Badge value="onboarding" />
+              </div>
+              <p className="muted" style={{ marginTop: 16 }}>
+                An illustrative preview. Your workspace starts with your own team.
+              </p>
+            </div>
+          </div>
+        </section>
+        <section id="features" className="marketing-feature-grid">
+          {[
+            {
+              icon: Users,
+              title: 'Know your people.',
+              text: 'A connected directory, rich employee profiles and an org chart that makes every connection clear.',
+            },
+            {
+              icon: CalendarDays,
+              title: 'Make space for life.',
+              text: 'Simple time-off requests, clear balances and approvals that keep everyone in the loop.',
+            },
+            {
+              icon: BriefcaseBusiness,
+              title: 'Build your next chapter.',
+              text: 'Keep hiring moving from application to offer, then give every new teammate a thoughtful start.',
+            },
+            {
+              icon: Sparkles,
+              title: 'A helpful second hand.',
+              text: 'Draft job descriptions, review documented skills and find answers in your company handbook.',
+            },
+          ].map((feature) => (
+            <div key={feature.title}>
+              <span className="feature-icon">
+                <feature.icon size={23} />
+              </span>
+              <h3>{feature.title}</h3>
+              <p>{feature.text}</p>
+            </div>
+          ))}
+        </section>
+        <section className="marketing-cta">
+          <h2>Less busywork. More possibility.</h2>
+          <p>Give your people a workspace they’ll feel good about.</p>
+          <Link className="btn btn-primary" href="/register">
+            Create your workspace <ArrowRight size={17} />
+          </Link>
+        </section>
+      </main>
+      <footer className="marketing-footer">
+        <Brand />
+        <span>People ops without the busywork.</span>
+        <Link className="text-link" href="/login">
+          Your workspace <ArrowUpRight size={16} />
+        </Link>
+      </footer>
+    </div>
+  );
 }
-

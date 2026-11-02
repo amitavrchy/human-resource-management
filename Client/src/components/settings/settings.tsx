@@ -6,44 +6,371 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowUpRight, KeyRound, Pencil, Plus, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { setOrganization, setSession, setTheme, useAppDispatch, useAppSelector } from '@/features/store';
+import {
+  setOrganization,
+  setSession,
+  setTheme,
+  useAppDispatch,
+  useAppSelector,
+} from '@/features/store';
 import type { Employee, Member, Metadata, Role } from '@/lib/types';
 import { fullName, isAdmin, label } from '@/lib/utils';
 import { useAction, useApi, useSession } from '@/hooks/use-api';
-import { Avatar, Badge, Button, EmptyState, ErrorState, Field, Loading, Modal, PageHeader, Panel, PanelHeader } from '@/components/ui/core';
+import {
+  Avatar,
+  Badge,
+  Button,
+  EmptyState,
+  ErrorState,
+  Field,
+  Loading,
+  Modal,
+  PageHeader,
+  Panel,
+  PanelHeader,
+} from '@/components/ui/core';
 
 type Collection = 'departments' | 'locations' | 'leave-policies' | 'onboarding-templates';
-interface SettingsRecord { id: string; name: string; code?: string; country?: string; annualDays?: number; isDefault?: boolean; tasksJson?: { title: string }[] }
-const collectionNames = { departments: 'department', locations: 'location', 'leave-policies': 'leave policy', 'onboarding-templates': 'onboarding template' };
-function RecordForm({ collection, record, close }: { collection: Collection; record?: SettingsRecord; close: () => void }) {
-  const { register, handleSubmit } = useForm<{ name: string; country: string; code: string; annualDays: string; tasks: string }>({ defaultValues: { name: record?.name ?? '', country: record?.country ?? 'BD', code: record?.code ?? '', annualDays: String(record?.annualDays ?? 20), tasks: record?.tasksJson?.map(task => task.title).join('\n') ?? 'Set up work account\nCollect laptop\nRead the handbook\nComplete payroll details' } });
-  const save = useAction(async (values: { name: string; country: string; code: string; annualDays: string; tasks: string }) => {
-    const data = { name: values.name, ...(collection === 'locations' ? { country: values.country.toUpperCase() } : {}), ...(collection === 'leave-policies' ? { code: values.code.toUpperCase(), annualDays: Number(values.annualDays) } : {}), ...(collection === 'onboarding-templates' ? { tasks: values.tasks.split('\n').map(title => ({ title: title.trim() })).filter(task => task.title) } : {}) };
-    return (await (record ? api.patch(`/${collection}/${record.id}`, data) : api.post(`/${collection}`, data))).data;
-  }, { success: 'Workspace settings saved.', onSuccess: close });
-  return <form onSubmit={handleSubmit(values => save.mutate(values))}><div className="stack-sm"><Field label="Name"><input required maxLength={120} {...register('name', { required: true })} /></Field>{collection === 'locations' && <Field label="Country code" hint="Two-letter country code, e.g. BD, GB or US."><input required minLength={2} maxLength={2} pattern="[A-Za-z]{2}" {...register('country')} /></Field>}{collection === 'leave-policies' && <><Field label="Policy code" hint="Uppercase letters and underscores, e.g. ANNUAL."><input required minLength={2} maxLength={20} pattern="[A-Za-z_]{2,20}" {...register('code')} /></Field><Field label="Annual entitlement (working days)"><input type="number" min={0} max={366} step={0.5} required {...register('annualDays')} /></Field><p className="field-hint">Changes apply when a new yearly balance is initialized. Existing balances and approved leave are preserved.</p></>}{collection === 'onboarding-templates' && <Field label="Checklist steps" hint="One task per line. Your default template is used for new teammates."><textarea required rows={7} maxLength={10000} {...register('tasks', { required: true })} /></Field>}</div><div className="dialog-footer"><Button type="button" variant="secondary" onClick={close}>Cancel</Button><Button type="submit" loading={save.isPending}>Save {collectionNames[collection]}</Button></div></form>;
+interface SettingsRecord {
+  id: string;
+  name: string;
+  code?: string;
+  country?: string;
+  annualDays?: number;
+  isDefault?: boolean;
+  tasksJson?: { title: string }[];
+}
+const collectionNames = {
+  departments: 'department',
+  locations: 'location',
+  'leave-policies': 'leave policy',
+  'onboarding-templates': 'onboarding template',
+};
+function RecordForm({
+  collection,
+  record,
+  close,
+}: {
+  collection: Collection;
+  record?: SettingsRecord;
+  close: () => void;
+}) {
+  const { register, handleSubmit } = useForm<{
+    name: string;
+    country: string;
+    code: string;
+    annualDays: string;
+    tasks: string;
+  }>({
+    defaultValues: {
+      name: record?.name ?? '',
+      country: record?.country ?? 'BD',
+      code: record?.code ?? '',
+      annualDays: String(record?.annualDays ?? 20),
+      tasks:
+        record?.tasksJson?.map((task) => task.title).join('\n') ??
+        'Set up work account\nCollect laptop\nRead the handbook\nComplete payroll details',
+    },
+  });
+  const save = useAction(
+    async (values: {
+      name: string;
+      country: string;
+      code: string;
+      annualDays: string;
+      tasks: string;
+    }) => {
+      const data = {
+        name: values.name,
+        ...(collection === 'locations' ? { country: values.country.toUpperCase() } : {}),
+        ...(collection === 'leave-policies'
+          ? { code: values.code.toUpperCase(), annualDays: Number(values.annualDays) }
+          : {}),
+        ...(collection === 'onboarding-templates'
+          ? {
+              tasks: values.tasks
+                .split('\n')
+                .map((title) => ({ title: title.trim() }))
+                .filter((task) => task.title),
+            }
+          : {}),
+      };
+      return (
+        await (record
+          ? api.patch(`/${collection}/${record.id}`, data)
+          : api.post(`/${collection}`, data))
+      ).data;
+    },
+    { success: 'Workspace settings saved.', onSuccess: close },
+  );
+  return (
+    <form onSubmit={handleSubmit((values) => save.mutate(values))}>
+      <div className="stack-sm">
+        <Field label="Name">
+          <input required maxLength={120} {...register('name', { required: true })} />
+        </Field>
+        {collection === 'locations' && (
+          <Field label="Country code" hint="Two-letter country code, e.g. BD, GB or US.">
+            <input
+              required
+              minLength={2}
+              maxLength={2}
+              pattern="[A-Za-z]{2}"
+              {...register('country')}
+            />
+          </Field>
+        )}
+        {collection === 'leave-policies' && (
+          <>
+            <Field label="Policy code" hint="Uppercase letters and underscores, e.g. ANNUAL.">
+              <input
+                required
+                minLength={2}
+                maxLength={20}
+                pattern="[A-Za-z_]{2,20}"
+                {...register('code')}
+              />
+            </Field>
+            <Field label="Annual entitlement (working days)">
+              <input
+                type="number"
+                min={0}
+                max={366}
+                step={0.5}
+                required
+                {...register('annualDays')}
+              />
+            </Field>
+            <p className="field-hint">
+              Changes apply when a new yearly balance is initialized. Existing balances and approved
+              leave are preserved.
+            </p>
+          </>
+        )}
+        {collection === 'onboarding-templates' && (
+          <Field
+            label="Checklist steps"
+            hint="One task per line. Your default template is used for new teammates."
+          >
+            <textarea
+              required
+              rows={7}
+              maxLength={10000}
+              {...register('tasks', { required: true })}
+            />
+          </Field>
+        )}
+      </div>
+      <div className="dialog-footer">
+        <Button type="button" variant="secondary" onClick={close}>
+          Cancel
+        </Button>
+        <Button type="submit" loading={save.isPending}>
+          Save {collectionNames[collection]}
+        </Button>
+      </div>
+    </form>
+  );
 }
 function OrganizationForm() {
   const { data: session } = useSession();
   const query = useQueryClient();
-  const { register, handleSubmit } = useForm<{ name: string; timezone: string }>({ defaultValues: { name: session?.organization.name ?? '', timezone: session?.organization.timezone ?? 'Asia/Dhaka' } });
-  const save = useAction(async (values: { name: string; timezone: string }) => (await api.patch('/organization', values)).data, { success: 'Your workspace, updated.', onSuccess: () => { void query.invalidateQueries({ queryKey: ['session'] }); } });
-  return <Panel><PanelHeader title="A home for your team" description="Your organization’s name and local time zone." /><form className="settings-form" onSubmit={handleSubmit(values => save.mutate(values))}><Field label="Organization name"><input required minLength={2} maxLength={120} {...register('name', { required: true })} /></Field><Field label="Workspace handle" hint="Your workspace’s unique identifier."><input readOnly value={session?.organization.slug ?? ''} /></Field><Field label="Time zone" hint="An IANA time zone, such as Asia/Dhaka or Europe/London."><input required maxLength={80} list="timezones" {...register('timezone', { required: true })} /></Field><datalist id="timezones">{['Asia/Dhaka', 'Asia/Kolkata', 'Asia/Singapore', 'Europe/London', 'Europe/Berlin', 'America/New_York', 'America/Los_Angeles', 'UTC'].map(zone => <option key={zone} value={zone} />)}</datalist><Button type="submit" loading={save.isPending}>Save workspace</Button></form></Panel>;
+  const { register, handleSubmit } = useForm<{ name: string; timezone: string }>({
+    defaultValues: {
+      name: session?.organization.name ?? '',
+      timezone: session?.organization.timezone ?? 'Asia/Dhaka',
+    },
+  });
+  const save = useAction(
+    async (values: { name: string; timezone: string }) =>
+      (await api.patch('/organization', values)).data,
+    {
+      success: 'Your workspace, updated.',
+      onSuccess: () => {
+        void query.invalidateQueries({ queryKey: ['session'] });
+      },
+    },
+  );
+  return (
+    <Panel>
+      <PanelHeader
+        title="A home for your team"
+        description="Your organization’s name and local time zone."
+      />
+      <form className="settings-form" onSubmit={handleSubmit((values) => save.mutate(values))}>
+        <Field label="Organization name">
+          <input required minLength={2} maxLength={120} {...register('name', { required: true })} />
+        </Field>
+        <Field label="Workspace handle" hint="Your workspace’s unique identifier.">
+          <input readOnly value={session?.organization.slug ?? ''} />
+        </Field>
+        <Field label="Time zone" hint="An IANA time zone, such as Asia/Dhaka or Europe/London.">
+          <input
+            required
+            maxLength={80}
+            list="timezones"
+            {...register('timezone', { required: true })}
+          />
+        </Field>
+        <datalist id="timezones">
+          {[
+            'Asia/Dhaka',
+            'Asia/Kolkata',
+            'Asia/Singapore',
+            'Europe/London',
+            'Europe/Berlin',
+            'America/New_York',
+            'America/Los_Angeles',
+            'UTC',
+          ].map((zone) => (
+            <option key={zone} value={zone} />
+          ))}
+        </datalist>
+        <Button type="submit" loading={save.isPending}>
+          Save workspace
+        </Button>
+      </form>
+    </Panel>
+  );
 }
 function PasswordForm() {
   const query = useQueryClient();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { register, handleSubmit } = useForm<{ currentPassword: string; newPassword: string }>();
-  const change = useAction(async (values: { currentPassword: string; newPassword: string }) => (await api.post('/auth/change-password', values)).data, { success: 'Password updated. Sign in with your new password.', onSuccess: () => { query.clear(); dispatch(setSession(null)); dispatch(setOrganization(null)); router.replace('/login'); } });
-  return <Panel><PanelHeader title="A little extra peace of mind" description="Changing your password signs you out on every device." action={<KeyRound size={20} className="muted" />} /><form className="settings-form" onSubmit={handleSubmit(values => change.mutate(values))}><Field label="Current password"><input type="password" autoComplete="current-password" required {...register('currentPassword', { required: true })} /></Field><Field label="New password" hint="At least 12 characters. Use a unique password for this account."><input type="password" autoComplete="new-password" required minLength={12} maxLength={72} {...register('newPassword', { required: true, minLength: 12 })} /></Field><Button type="submit" loading={change.isPending}>Change password</Button></form></Panel>;
+  const change = useAction(
+    async (values: { currentPassword: string; newPassword: string }) =>
+      (await api.post('/auth/change-password', values)).data,
+    {
+      success: 'Password updated. Sign in with your new password.',
+      onSuccess: () => {
+        query.clear();
+        dispatch(setSession(null));
+        dispatch(setOrganization(null));
+        router.replace('/login');
+      },
+    },
+  );
+  return (
+    <Panel>
+      <PanelHeader
+        title="A little extra peace of mind"
+        description="Changing your password signs you out on every device."
+        action={<KeyRound size={20} className="muted" />}
+      />
+      <form className="settings-form" onSubmit={handleSubmit((values) => change.mutate(values))}>
+        <Field label="Current password">
+          <input
+            type="password"
+            autoComplete="current-password"
+            required
+            {...register('currentPassword', { required: true })}
+          />
+        </Field>
+        <Field
+          label="New password"
+          hint="At least 12 characters. Use a unique password for this account."
+        >
+          <input
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={12}
+            maxLength={72}
+            {...register('newPassword', { required: true, minLength: 12 })}
+          />
+        </Field>
+        <Button type="submit" loading={change.isPending}>
+          Change password
+        </Button>
+      </form>
+    </Panel>
+  );
 }
 function MemberForm({ close }: { close: () => void }) {
   const { data: session } = useSession();
   const people = useApi<Employee[]>('/employees/org-tree');
-  const { register, handleSubmit } = useForm<{ name: string; email: string; password: string; role: Role; employeeId: string }>({ defaultValues: { role: 'EMPLOYEE', employeeId: '' } });
-  const save = useAction(async (values: { name: string; email: string; password: string; role: Role; employeeId: string }) => (await api.post('/members', { ...values, employeeId: values.employeeId || undefined })).data, { success: 'Workspace access created. Share the initial password securely.', onSuccess: close });
-  return <form onSubmit={handleSubmit(values => save.mutate(values))}><div className="stack-sm"><Field label="Full name"><input required minLength={2} maxLength={100} {...register('name', { required: true })} /></Field><Field label="Work email"><input type="email" required {...register('email', { required: true })} /></Field><Field label="Initial password" hint="Share it securely. The member can change it from their settings."><input type="password" autoComplete="new-password" required minLength={12} maxLength={72} {...register('password', { required: true, minLength: 12 })} /></Field><Field label="Workspace role"><select {...register('role')}>{(['EMPLOYEE', 'MANAGER', 'RECRUITER', 'HR_ADMIN', ...(session?.role === 'OWNER' ? ['OWNER'] : [])] as Role[]).map(role => <option value={role} key={role}>{label(role)}</option>)}</select></Field><Field label="Link employee record" hint="Choose an unlinked employee with the same work email."><select {...register('employeeId')}><option value="">No employee link</option>{people.data?.map(person => <option value={person.id} key={person.id}>{fullName(person)} · {person.workEmail}</option>)}</select></Field></div><div className="dialog-footer"><Button type="button" variant="secondary" onClick={close}>Cancel</Button><Button type="submit" loading={save.isPending}>Create access</Button></div></form>;
+  const { register, handleSubmit } = useForm<{
+    name: string;
+    email: string;
+    password: string;
+    role: Role;
+    employeeId: string;
+  }>({ defaultValues: { role: 'EMPLOYEE', employeeId: '' } });
+  const save = useAction(
+    async (values: {
+      name: string;
+      email: string;
+      password: string;
+      role: Role;
+      employeeId: string;
+    }) =>
+      (await api.post('/members', { ...values, employeeId: values.employeeId || undefined })).data,
+    { success: 'Workspace access created. Share the initial password securely.', onSuccess: close },
+  );
+  return (
+    <form onSubmit={handleSubmit((values) => save.mutate(values))}>
+      <div className="stack-sm">
+        <Field label="Full name">
+          <input required minLength={2} maxLength={100} {...register('name', { required: true })} />
+        </Field>
+        <Field label="Work email">
+          <input type="email" required {...register('email', { required: true })} />
+        </Field>
+        <Field
+          label="Initial password"
+          hint="Share it securely. The member can change it from their settings."
+        >
+          <input
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={12}
+            maxLength={72}
+            {...register('password', { required: true, minLength: 12 })}
+          />
+        </Field>
+        <Field label="Workspace role">
+          <select {...register('role')}>
+            {(
+              [
+                'EMPLOYEE',
+                'MANAGER',
+                'RECRUITER',
+                'HR_ADMIN',
+                ...(session?.role === 'OWNER' ? ['OWNER'] : []),
+              ] as Role[]
+            ).map((role) => (
+              <option value={role} key={role}>
+                {label(role)}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field
+          label="Link employee record"
+          hint="Choose an unlinked employee with the same work email."
+        >
+          <select {...register('employeeId')}>
+            <option value="">No employee link</option>
+            {people.data?.map((person) => (
+              <option value={person.id} key={person.id}>
+                {fullName(person)} · {person.workEmail}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <div className="dialog-footer">
+        <Button type="button" variant="secondary" onClick={close}>
+          Cancel
+        </Button>
+        <Button type="submit" loading={save.isPending}>
+          Create access
+        </Button>
+      </div>
+    </form>
+  );
 }
 function Members() {
   const members = useApi<Member[]>('/members');
@@ -52,23 +379,390 @@ function Members() {
   const [adding, setAdding] = useState(false);
   const [changing, setChanging] = useState<{ member: Member; role: Role } | null>(null);
   const query = useQueryClient();
-  const change = useAction(async (value: NonNullable<typeof changing>) => (await api.patch(`/members/${value.member.id}/role`, { role: value.role })).data, { success: 'Role updated. This member will need to sign in again.', onSuccess: () => { if (changing?.member.id === session?.membershipId) { query.clear(); router.replace('/login'); } setChanging(null); } });
-  return <><Panel><PanelHeader title="The right access, for the right people" description="Create sign-in access and assign workspace roles." action={<Button variant="secondary" onClick={() => setAdding(true)}><Plus size={16} />Add member</Button>} />{members.isPending ? <Loading /> : members.error ? <ErrorState error={members.error} retry={() => void members.refetch()} /> : members.data.map(member => <div className="settings-list-row" key={member.id}><div className="person-cell"><Avatar name={member.user.name} /><span><strong>{member.user.name}</strong><small>{member.user.email}</small></span></div><select className="filter-select" value={member.role} disabled={member.role === 'OWNER' && session?.role !== 'OWNER' || change.isPending} aria-label={`Role for ${member.user.name}`} onChange={event => setChanging({ member, role: event.target.value as Role })}>{(['EMPLOYEE', 'MANAGER', 'RECRUITER', 'HR_ADMIN', ...(session?.role === 'OWNER' || member.role === 'OWNER' ? ['OWNER'] : [])] as Role[]).map(role => <option value={role} key={role}>{label(role)}</option>)}</select></div>)}</Panel><Modal open={adding} onOpenChange={setAdding} title="Make the right connection." description="Create workspace access for a teammate. No email is sent automatically."><MemberForm close={() => setAdding(false)} /></Modal><Modal open={!!changing} onOpenChange={() => setChanging(null)} title="Update this member’s role?" description={changing ? `${changing.member.user.name} will have ${label(changing.role)} access.` : undefined}><p className="muted">Their existing sessions will end. Your workspace must keep at least one owner.</p><div className="dialog-footer"><Button variant="secondary" onClick={() => setChanging(null)}>Keep current role</Button><Button loading={change.isPending} onClick={() => changing && change.mutate(changing)}>Update role</Button></div></Modal></>;
+  const change = useAction(
+    async (value: NonNullable<typeof changing>) =>
+      (await api.patch(`/members/${value.member.id}/role`, { role: value.role })).data,
+    {
+      success: 'Role updated. This member will need to sign in again.',
+      onSuccess: () => {
+        if (changing?.member.id === session?.membershipId) {
+          query.clear();
+          router.replace('/login');
+        }
+        setChanging(null);
+      },
+    },
+  );
+  return (
+    <>
+      <Panel>
+        <PanelHeader
+          title="The right access, for the right people"
+          description="Create sign-in access and assign workspace roles."
+          action={
+            <Button variant="secondary" onClick={() => setAdding(true)}>
+              <Plus size={16} />
+              Add member
+            </Button>
+          }
+        />
+        {members.isPending ? (
+          <Loading />
+        ) : members.error ? (
+          <ErrorState error={members.error} retry={() => void members.refetch()} />
+        ) : (
+          members.data.map((member) => (
+            <div className="settings-list-row" key={member.id}>
+              <div className="person-cell">
+                <Avatar name={member.user.name} />
+                <span>
+                  <strong>{member.user.name}</strong>
+                  <small>{member.user.email}</small>
+                </span>
+              </div>
+              <select
+                className="filter-select"
+                value={member.role}
+                disabled={
+                  (member.role === 'OWNER' && session?.role !== 'OWNER') || change.isPending
+                }
+                aria-label={`Role for ${member.user.name}`}
+                onChange={(event) => setChanging({ member, role: event.target.value as Role })}
+              >
+                {(
+                  [
+                    'EMPLOYEE',
+                    'MANAGER',
+                    'RECRUITER',
+                    'HR_ADMIN',
+                    ...(session?.role === 'OWNER' || member.role === 'OWNER' ? ['OWNER'] : []),
+                  ] as Role[]
+                ).map((role) => (
+                  <option value={role} key={role}>
+                    {label(role)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))
+        )}
+      </Panel>
+      <Modal
+        open={adding}
+        onOpenChange={setAdding}
+        title="Make the right connection."
+        description="Create workspace access for a teammate. No email is sent automatically."
+      >
+        <MemberForm close={() => setAdding(false)} />
+      </Modal>
+      <Modal
+        open={!!changing}
+        onOpenChange={() => setChanging(null)}
+        title="Update this member’s role?"
+        description={
+          changing
+            ? `${changing.member.user.name} will have ${label(changing.role)} access.`
+            : undefined
+        }
+      >
+        <p className="muted">
+          Their existing sessions will end. Your workspace must keep at least one owner.
+        </p>
+        <div className="dialog-footer">
+          <Button variant="secondary" onClick={() => setChanging(null)}>
+            Keep current role
+          </Button>
+          <Button loading={change.isPending} onClick={() => changing && change.mutate(changing)}>
+            Update role
+          </Button>
+        </div>
+      </Modal>
+    </>
+  );
 }
 export function Settings() {
   const { data: session } = useSession();
   const dispatch = useAppDispatch();
-  const theme = useAppSelector(state => state.ui.theme);
+  const theme = useAppSelector((state) => state.ui.theme);
   const admin = isAdmin(session?.role);
   const meta = useApi<Metadata>('/organization/metadata');
   const ai = useApi<{ available: boolean }>('/ai/status');
   const [tab, setTab] = useState(admin ? 'organization' : 'preferences');
-  const [editing, setEditing] = useState<{ collection: Collection; record?: SettingsRecord } | null>(null);
-  const [deleting, setDeleting] = useState<{ collection: Collection; record: SettingsRecord } | null>(null);
-  const makeDefault = useAction(async (id: string) => (await api.post(`/onboarding-templates/${id}/default`)).data, { success: 'Default onboarding template updated.' });
-  const remove = useAction(async (value: NonNullable<typeof deleting>) => (await api.delete(`/${value.collection}/${value.record.id}`)).data, { success: 'Workspace updated.', onSuccess: () => setDeleting(null) });
-  const nav = [...(admin ? [{ value: 'organization', title: 'Organization' }, { value: 'departments', title: 'Departments' }, { value: 'locations', title: 'Locations' }, { value: 'leave-policies', title: 'Leave policies' }, { value: 'onboarding-templates', title: 'Onboarding templates' }, { value: 'members', title: 'Members & roles' }, { value: 'integrations', title: 'Connections' }] : []), { value: 'preferences', title: 'My preferences' }, { value: 'security', title: 'Password & security' }];
-  const records = tab === 'departments' ? meta.data?.departments : tab === 'locations' ? meta.data?.locations : tab === 'leave-policies' ? meta.data?.policies : tab === 'onboarding-templates' ? meta.data?.templates : undefined;
-  const appearance = (next: 'light' | 'dark') => { dispatch(setTheme(next)); localStorage.setItem('peopleos-theme', next); document.documentElement.dataset.theme = next; };
-  return <><PageHeader title="A workspace that works for you." description="The right structure, the right access and a few personal touches." /><div className="settings-layout"><nav className="settings-nav" aria-label="Settings sections">{nav.map(item => <button className={tab === item.value ? 'active' : ''} aria-pressed={tab === item.value} onClick={() => setTab(item.value)} key={item.value}>{item.title}</button>)}</nav><div className="stack">{tab === 'organization' && admin && <OrganizationForm />}{tab === 'members' && admin && <Members />}{tab === 'security' && <PasswordForm />}{tab === 'preferences' && <><Panel><PanelHeader title="Make yourself at home" description="Choose the appearance that feels right for you." /><div className="settings-form"><Field label="Appearance"><select value={theme} onChange={event => appearance(event.target.value as 'light' | 'dark')}><option value="light">Light · A little more daylight</option><option value="dark">Dark · A little less glare</option></select></Field><p className="muted">Your appearance preference is saved on this device.</p>{session?.employeeId && <Link className="text-link" style={{ marginTop: 22 }} href={`/app/directory/${session.employeeId}`}>Update my contact details <ArrowUpRight size={16} /></Link>}</div></Panel><Panel><PanelHeader title="Keyboard shortcuts" /><div className="settings-list-row"><strong>Search people, pages and actions</strong><kbd>Ctrl / ⌘ K</kbd></div><div className="settings-list-row"><strong>Close a dialog</strong><kbd>Esc</kbd></div></Panel></>}{tab === 'integrations' && admin && <><Panel><PanelHeader title="A helpful connection" description="Your AI copilot’s current availability." /><div className="settings-list-row"><div><strong>PeopleOS Copilot</strong><p>Job descriptions, resume screening and handbook answers.</p></div><Badge value={ai.data?.available ? 'READY' : 'PENDING'}>{ai.data?.available ? 'Connected' : ai.isFetching ? 'Checking' : 'Unavailable'}</Badge></div><div className="panel-body" style={{ paddingTop: 20 }}><Button variant="secondary" loading={ai.isFetching} onClick={() => void ai.refetch()}>Check connection</Button></div></Panel><Panel><PanelHeader title="More connections, in time" /><div className="settings-list-row"><div><strong>Payroll, calendar & team chat</strong><p>External integrations are planned. These connections are not available in this release.</p></div><Badge>Planned</Badge></div></Panel></>}{['departments', 'locations', 'leave-policies', 'onboarding-templates'].includes(tab) && admin && <Panel><PanelHeader title={nav.find(item => item.value === tab)?.title ?? ''} description={tab === 'onboarding-templates' ? 'Checklist templates for a thoughtful first day.' : 'Keep your workspace organized and clear.'} action={<Button variant="secondary" onClick={() => setEditing({ collection: tab as Collection })}><Plus size={16} />Add</Button>} />{meta.isPending ? <Loading /> : meta.error ? <ErrorState error={meta.error} retry={() => void meta.refetch()} /> : records?.length ? (records as SettingsRecord[]).map(record => <div className="settings-list-row" key={record.id}><div><strong>{record.name}</strong><p>{record.country ?? (record.annualDays !== undefined ? `${record.annualDays} working days / year · ${record.code}` : record.tasksJson ? `${record.tasksJson.length} checklist steps` : 'Workspace department')}</p></div><div className="row">{tab === 'onboarding-templates' && (record.isDefault ? <Badge value="READY">Default</Badge> : <Button variant="ghost" disabled={makeDefault.isPending} onClick={() => makeDefault.mutate(record.id)}>Use as default</Button>)}<button className="icon-button" aria-label={`Edit ${record.name}`} onClick={() => setEditing({ collection: tab as Collection, record })}><Pencil size={16} /></button><button className="icon-button" aria-label={`Delete ${record.name}`} onClick={() => setDeleting({ collection: tab as Collection, record })}><Trash2 size={16} /></button></div></div>) : <EmptyState title="A little structure starts here." description={`Add your first ${collectionNames[tab as Collection]}.`} />}</Panel>}</div></div><Modal open={!!editing} onOpenChange={() => setEditing(null)} title={editing ? `${editing.record ? 'Edit' : 'Add'} ${collectionNames[editing.collection]}` : 'Workspace setting'} description="A few details to keep your workspace in shape.">{editing && <RecordForm collection={editing.collection} record={editing.record} close={() => setEditing(null)} />}</Modal><Modal open={!!deleting} onOpenChange={() => setDeleting(null)} title="Remove this workspace setting?" description={deleting?.record.name}><p className="muted">{deleting?.collection === 'leave-policies' ? 'Leave policies with request history cannot be deleted.' : deleting?.collection === 'departments' || deleting?.collection === 'locations' ? 'Assigned employees will keep their records and become unassigned for this setting.' : 'Existing checklists stay intact. New teammates will use the next available template.'}</p><div className="dialog-footer"><Button variant="secondary" onClick={() => setDeleting(null)}>Keep it</Button><Button variant="danger" loading={remove.isPending} onClick={() => deleting && remove.mutate(deleting)}>Remove</Button></div></Modal></>;
+  const [editing, setEditing] = useState<{
+    collection: Collection;
+    record?: SettingsRecord;
+  } | null>(null);
+  const [deleting, setDeleting] = useState<{
+    collection: Collection;
+    record: SettingsRecord;
+  } | null>(null);
+  const makeDefault = useAction(
+    async (id: string) => (await api.post(`/onboarding-templates/${id}/default`)).data,
+    { success: 'Default onboarding template updated.' },
+  );
+  const remove = useAction(
+    async (value: NonNullable<typeof deleting>) =>
+      (await api.delete(`/${value.collection}/${value.record.id}`)).data,
+    { success: 'Workspace updated.', onSuccess: () => setDeleting(null) },
+  );
+  const nav = [
+    ...(admin
+      ? [
+          { value: 'organization', title: 'Organization' },
+          { value: 'departments', title: 'Departments' },
+          { value: 'locations', title: 'Locations' },
+          { value: 'leave-policies', title: 'Leave policies' },
+          { value: 'onboarding-templates', title: 'Onboarding templates' },
+          { value: 'members', title: 'Members & roles' },
+          { value: 'integrations', title: 'Connections' },
+        ]
+      : []),
+    { value: 'preferences', title: 'My preferences' },
+    { value: 'security', title: 'Password & security' },
+  ];
+  const records =
+    tab === 'departments'
+      ? meta.data?.departments
+      : tab === 'locations'
+        ? meta.data?.locations
+        : tab === 'leave-policies'
+          ? meta.data?.policies
+          : tab === 'onboarding-templates'
+            ? meta.data?.templates
+            : undefined;
+  const appearance = (next: 'light' | 'dark') => {
+    dispatch(setTheme(next));
+    localStorage.setItem('peopleos-theme', next);
+    document.documentElement.dataset.theme = next;
+  };
+  return (
+    <>
+      <PageHeader
+        title="A workspace that works for you."
+        description="The right structure, the right access and a few personal touches."
+      />
+      <div className="settings-layout">
+        <nav className="settings-nav" aria-label="Settings sections">
+          {nav.map((item) => (
+            <button
+              className={tab === item.value ? 'active' : ''}
+              aria-pressed={tab === item.value}
+              onClick={() => setTab(item.value)}
+              key={item.value}
+            >
+              {item.title}
+            </button>
+          ))}
+        </nav>
+        <div className="stack">
+          {tab === 'organization' && admin && <OrganizationForm />}
+          {tab === 'members' && admin && <Members />}
+          {tab === 'security' && <PasswordForm />}
+          {tab === 'preferences' && (
+            <>
+              <Panel>
+                <PanelHeader
+                  title="Make yourself at home"
+                  description="Choose the appearance that feels right for you."
+                />
+                <div className="settings-form">
+                  <Field label="Appearance">
+                    <select
+                      value={theme}
+                      onChange={(event) => appearance(event.target.value as 'light' | 'dark')}
+                    >
+                      <option value="light">Light · A little more daylight</option>
+                      <option value="dark">Dark · A little less glare</option>
+                    </select>
+                  </Field>
+                  <p className="muted">Your appearance preference is saved on this device.</p>
+                  {session?.employeeId && (
+                    <Link
+                      className="text-link"
+                      style={{ marginTop: 22 }}
+                      href={`/app/directory/${session.employeeId}`}
+                    >
+                      Update my contact details <ArrowUpRight size={16} />
+                    </Link>
+                  )}
+                </div>
+              </Panel>
+              <Panel>
+                <PanelHeader title="Keyboard shortcuts" />
+                <div className="settings-list-row">
+                  <strong>Search people, pages and actions</strong>
+                  <kbd>Ctrl / ⌘ K</kbd>
+                </div>
+                <div className="settings-list-row">
+                  <strong>Close a dialog</strong>
+                  <kbd>Esc</kbd>
+                </div>
+              </Panel>
+            </>
+          )}
+          {tab === 'integrations' && admin && (
+            <>
+              <Panel>
+                <PanelHeader
+                  title="A helpful connection"
+                  description="Your AI copilot’s current availability."
+                />
+                <div className="settings-list-row">
+                  <div>
+                    <strong>PeopleOS Copilot</strong>
+                    <p>Job descriptions, resume screening and handbook answers.</p>
+                  </div>
+                  <Badge value={ai.data?.available ? 'READY' : 'PENDING'}>
+                    {ai.data?.available ? 'Connected' : ai.isFetching ? 'Checking' : 'Unavailable'}
+                  </Badge>
+                </div>
+                <div className="panel-body" style={{ paddingTop: 20 }}>
+                  <Button
+                    variant="secondary"
+                    loading={ai.isFetching}
+                    onClick={() => void ai.refetch()}
+                  >
+                    Check connection
+                  </Button>
+                </div>
+              </Panel>
+              <Panel>
+                <PanelHeader title="More connections, in time" />
+                <div className="settings-list-row">
+                  <div>
+                    <strong>Payroll, calendar & team chat</strong>
+                    <p>
+                      External integrations are planned. These connections are not available in this
+                      release.
+                    </p>
+                  </div>
+                  <Badge>Planned</Badge>
+                </div>
+              </Panel>
+            </>
+          )}
+          {['departments', 'locations', 'leave-policies', 'onboarding-templates'].includes(tab) &&
+            admin && (
+              <Panel>
+                <PanelHeader
+                  title={nav.find((item) => item.value === tab)?.title ?? ''}
+                  description={
+                    tab === 'onboarding-templates'
+                      ? 'Checklist templates for a thoughtful first day.'
+                      : 'Keep your workspace organized and clear.'
+                  }
+                  action={
+                    <Button
+                      variant="secondary"
+                      onClick={() => setEditing({ collection: tab as Collection })}
+                    >
+                      <Plus size={16} />
+                      Add
+                    </Button>
+                  }
+                />
+                {meta.isPending ? (
+                  <Loading />
+                ) : meta.error ? (
+                  <ErrorState error={meta.error} retry={() => void meta.refetch()} />
+                ) : records?.length ? (
+                  (records as SettingsRecord[]).map((record) => (
+                    <div className="settings-list-row" key={record.id}>
+                      <div>
+                        <strong>{record.name}</strong>
+                        <p>
+                          {record.country ??
+                            (record.annualDays !== undefined
+                              ? `${record.annualDays} working days / year · ${record.code}`
+                              : record.tasksJson
+                                ? `${record.tasksJson.length} checklist steps`
+                                : 'Workspace department')}
+                        </p>
+                      </div>
+                      <div className="row">
+                        {tab === 'onboarding-templates' &&
+                          (record.isDefault ? (
+                            <Badge value="READY">Default</Badge>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              disabled={makeDefault.isPending}
+                              onClick={() => makeDefault.mutate(record.id)}
+                            >
+                              Use as default
+                            </Button>
+                          ))}
+                        <button
+                          className="icon-button"
+                          aria-label={`Edit ${record.name}`}
+                          onClick={() => setEditing({ collection: tab as Collection, record })}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          className="icon-button"
+                          aria-label={`Delete ${record.name}`}
+                          onClick={() => setDeleting({ collection: tab as Collection, record })}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <EmptyState
+                    title="A little structure starts here."
+                    description={`Add your first ${collectionNames[tab as Collection]}.`}
+                  />
+                )}
+              </Panel>
+            )}
+        </div>
+      </div>
+      <Modal
+        open={!!editing}
+        onOpenChange={() => setEditing(null)}
+        title={
+          editing
+            ? `${editing.record ? 'Edit' : 'Add'} ${collectionNames[editing.collection]}`
+            : 'Workspace setting'
+        }
+        description="A few details to keep your workspace in shape."
+      >
+        {editing && (
+          <RecordForm
+            collection={editing.collection}
+            record={editing.record}
+            close={() => setEditing(null)}
+          />
+        )}
+      </Modal>
+      <Modal
+        open={!!deleting}
+        onOpenChange={() => setDeleting(null)}
+        title="Remove this workspace setting?"
+        description={deleting?.record.name}
+      >
+        <p className="muted">
+          {deleting?.collection === 'leave-policies'
+            ? 'Leave policies with request history cannot be deleted.'
+            : deleting?.collection === 'departments' || deleting?.collection === 'locations'
+              ? 'Assigned employees will keep their records and become unassigned for this setting.'
+              : 'Existing checklists stay intact. New teammates will use the next available template.'}
+        </p>
+        <div className="dialog-footer">
+          <Button variant="secondary" onClick={() => setDeleting(null)}>
+            Keep it
+          </Button>
+          <Button
+            variant="danger"
+            loading={remove.isPending}
+            onClick={() => deleting && remove.mutate(deleting)}
+          >
+            Remove
+          </Button>
+        </div>
+      </Modal>
+    </>
+  );
 }

@@ -28,14 +28,52 @@ import { ReportsController } from './reports/reports.controller.js';
 import { ReportsService } from './reports/reports.service.js';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, validate: (env: Record<string, unknown>) => {
-    const secret = env.JWT_SECRET;
-    if (typeof secret !== 'string' || secret.length < 32 || /replace|change-me/i.test(secret)) throw new Error('JWT_SECRET must contain at least 32 random characters.');
-    if (!env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
-    return env;
-  } }), JwtModule.register({}), PrismaModule],
-  controllers: [AppController, AuthController, PeopleController, OrganizationController, LeaveController, RecruitingController, LifecycleController, DocumentsController, AiController, ReportsController],
-  providers: [AppService, AuthService, AccessService, PeopleService, OrganizationService, LeaveService, RecruitingService, FilesService, LifecycleService, DocumentsService, AiService, ReportsService, { provide: APP_GUARD, useClass: SessionGuard }],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: (env: Record<string, unknown>) => {
+        const secret = env.JWT_SECRET;
+        if (
+          typeof secret !== 'string' ||
+          secret.length < 32 ||
+          /replace|change-me/i.test(secret)
+        )
+          throw new Error(
+            'JWT_SECRET must contain at least 32 random characters.',
+          );
+        if (!env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
+        return env;
+      },
+    }),
+    JwtModule.register({}),
+    PrismaModule,
+  ],
+  controllers: [
+    AppController,
+    AuthController,
+    PeopleController,
+    OrganizationController,
+    LeaveController,
+    RecruitingController,
+    LifecycleController,
+    DocumentsController,
+    AiController,
+    ReportsController,
+  ],
+  providers: [
+    AppService,
+    AuthService,
+    AccessService,
+    PeopleService,
+    OrganizationService,
+    LeaveService,
+    RecruitingService,
+    FilesService,
+    LifecycleService,
+    DocumentsService,
+    AiService,
+    ReportsService,
+    { provide: APP_GUARD, useClass: SessionGuard },
+  ],
 })
 export class AppModule {}
-

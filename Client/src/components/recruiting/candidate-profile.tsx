@@ -3,30 +3,185 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight, Download, Mail, MessageSquare, Save, Sparkles, Star, Trash2, Upload } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Download,
+  Mail,
+  MessageSquare,
+  Save,
+  Sparkles,
+  Star,
+  Trash2,
+  Upload,
+} from 'lucide-react';
 import { api } from '@/lib/api';
 import type { Candidate, Stage } from '@/lib/types';
 import { canRecruit, dateLabel, isAdmin, label } from '@/lib/utils';
 import { useAction, useApi, useSession } from '@/hooks/use-api';
-import { Avatar, Badge, Button, ErrorState, Field, Loading, Modal, Panel, PanelHeader, Tabs } from '@/components/ui/core';
+import {
+  Avatar,
+  Badge,
+  Button,
+  ErrorState,
+  Field,
+  Loading,
+  Modal,
+  Panel,
+  PanelHeader,
+  Tabs,
+} from '@/components/ui/core';
 import { HireDialog } from './job-form';
 import { stages } from './pipeline';
 
 function Notes({ candidate }: { candidate: Candidate }) {
-  const { register, handleSubmit } = useForm<{ notes: string }>({ defaultValues: { notes: candidate.notes ?? '' } });
-  const save = useAction(async (data: { notes: string }) => (await api.patch(`/candidates/${candidate.id}`, data)).data, { success: 'Notes saved.' });
-  return <form onSubmit={handleSubmit(data => save.mutate(data))} className="panel-body"><Field label="Your notes" hint="Keep feedback specific, relevant and respectful."><textarea rows={8} maxLength={10000} {...register('notes')} /></Field><div style={{ marginTop: 16 }}><Button type="submit" loading={save.isPending}><Save size={16} />Save notes</Button></div></form>;
+  const { register, handleSubmit } = useForm<{ notes: string }>({
+    defaultValues: { notes: candidate.notes ?? '' },
+  });
+  const save = useAction(
+    async (data: { notes: string }) => (await api.patch(`/candidates/${candidate.id}`, data)).data,
+    { success: 'Notes saved.' },
+  );
+  return (
+    <form onSubmit={handleSubmit((data) => save.mutate(data))} className="panel-body">
+      <Field label="Your notes" hint="Keep feedback specific, relevant and respectful.">
+        <textarea rows={8} maxLength={10000} {...register('notes')} />
+      </Field>
+      <div style={{ marginTop: 16 }}>
+        <Button type="submit" loading={save.isPending}>
+          <Save size={16} />
+          Save notes
+        </Button>
+      </div>
+    </form>
+  );
 }
 function Resume({ candidate, write }: { candidate: Candidate; write: boolean }) {
-  const { register, handleSubmit } = useForm<{ resumeText: string }>({ defaultValues: { resumeText: candidate.resumeText ?? '' } });
-  const save = useAction(async (data: { resumeText: string }) => (await api.patch(`/candidates/${candidate.id}`, data)).data, { success: 'Resume text saved. Previous AI assessment cleared.' });
-  const upload = useAction(async (file: File) => { const data = new FormData(); data.append('file', file); return (await api.post(`/candidates/${candidate.id}/resume`, data)).data; }, { success: 'Resume uploaded. Ready for a closer look.' });
-  return <div className="stack-sm panel-body">{write && <div className="upload-zone"><Upload size={24} /><strong>A closer look at their experience.</strong><span>Upload a PDF or UTF-8 text file, up to 10 MB.</span><input type="file" accept="application/pdf,text/plain,.txt" aria-label="Upload candidate resume" disabled={upload.isPending} onChange={event => { const file = event.target.files?.[0]; if (file) upload.mutate(file); event.target.value = ''; }} />{upload.isPending && <span role="status">Uploading…</span>}</div>}{candidate.hasResume && <a href={`/api/candidates/${candidate.id}/resume`} className="text-link"><Download size={16} />Download uploaded resume</a>}{write ? <form onSubmit={handleSubmit(data => save.mutate(data))}><Field label="Resume text" hint="Paste text here, or screen an uploaded PDF to extract its text."><textarea rows={13} maxLength={60000} {...register('resumeText')} /></Field><div style={{ marginTop: 16 }}><Button variant="secondary" type="submit" loading={save.isPending}><Save size={16} />Save resume text</Button></div></form> : <div className="prose">{candidate.resumeText || 'No resume text available.'}</div>}</div>;
+  const { register, handleSubmit } = useForm<{ resumeText: string }>({
+    defaultValues: { resumeText: candidate.resumeText ?? '' },
+  });
+  const save = useAction(
+    async (data: { resumeText: string }) =>
+      (await api.patch(`/candidates/${candidate.id}`, data)).data,
+    { success: 'Resume text saved. Previous AI assessment cleared.' },
+  );
+  const upload = useAction(
+    async (file: File) => {
+      const data = new FormData();
+      data.append('file', file);
+      return (await api.post(`/candidates/${candidate.id}/resume`, data)).data;
+    },
+    { success: 'Resume uploaded. Ready for a closer look.' },
+  );
+  return (
+    <div className="stack-sm panel-body">
+      {write && (
+        <div className="upload-zone">
+          <Upload size={24} />
+          <strong>A closer look at their experience.</strong>
+          <span>Upload a PDF or UTF-8 text file, up to 10 MB.</span>
+          <input
+            type="file"
+            accept="application/pdf,text/plain,.txt"
+            aria-label="Upload candidate resume"
+            disabled={upload.isPending}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) upload.mutate(file);
+              event.target.value = '';
+            }}
+          />
+          {upload.isPending && <span role="status">Uploading…</span>}
+        </div>
+      )}
+      {candidate.hasResume && (
+        <a href={`/api/candidates/${candidate.id}/resume`} className="text-link">
+          <Download size={16} />
+          Download uploaded resume
+        </a>
+      )}
+      {write ? (
+        <form onSubmit={handleSubmit((data) => save.mutate(data))}>
+          <Field
+            label="Resume text"
+            hint="Paste text here, or screen an uploaded PDF to extract its text."
+          >
+            <textarea rows={13} maxLength={60000} {...register('resumeText')} />
+          </Field>
+          <div style={{ marginTop: 16 }}>
+            <Button variant="secondary" type="submit" loading={save.isPending}>
+              <Save size={16} />
+              Save resume text
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="prose">{candidate.resumeText || 'No resume text available.'}</div>
+      )}
+    </div>
+  );
 }
 function Feedback({ candidate }: { candidate: Candidate }) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<{ comment: string; rating: string }>({ defaultValues: { comment: '', rating: '3' } });
-  const save = useAction(async (data: { comment: string; rating: string }) => (await api.post(`/candidates/${candidate.id}/feedback`, { ...data, rating: Number(data.rating) })).data, { success: 'Feedback added.', onSuccess: () => reset() });
-  return <div className="panel-body stack">{candidate.feedbackJson?.map((feedback, index) => <div className="review-card panel" key={`${feedback.createdAt}-${index}`}><div className="between"><span className="row" style={{ color: '#b78e46', gap: 4 }}><Star size={16} />{feedback.rating} / 5</span><span className="muted">{dateLabel(feedback.createdAt)}</span></div><p style={{ marginTop: 12 }}>{feedback.comment}</p></div>)}<form onSubmit={handleSubmit(values => save.mutate(values))}><div className="stack-sm"><Field label="Interview feedback" error={errors.comment?.message}><textarea rows={4} maxLength={3000} placeholder="What did you learn about their experience and skills?" {...register('comment', { required: 'Add your feedback.', minLength: { value: 3, message: 'Add at least 3 characters.' } })} /></Field><Field label="Role-specific assessment"><select {...register('rating')}><option value="1">1 · Significant gaps</option><option value="2">2 · Some gaps</option><option value="3">3 · Meets expectations</option><option value="4">4 · Strong evidence</option><option value="5">5 · Exceptional evidence</option></select></Field><Button type="submit" loading={save.isPending}><MessageSquare size={16} />Add feedback</Button></div></form></div>;
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<{ comment: string; rating: string }>({ defaultValues: { comment: '', rating: '3' } });
+  const save = useAction(
+    async (data: { comment: string; rating: string }) =>
+      (
+        await api.post(`/candidates/${candidate.id}/feedback`, {
+          ...data,
+          rating: Number(data.rating),
+        })
+      ).data,
+    { success: 'Feedback added.', onSuccess: () => reset() },
+  );
+  return (
+    <div className="panel-body stack">
+      {candidate.feedbackJson?.map((feedback, index) => (
+        <div className="review-card panel" key={`${feedback.createdAt}-${index}`}>
+          <div className="between">
+            <span className="row" style={{ color: '#b78e46', gap: 4 }}>
+              <Star size={16} />
+              {feedback.rating} / 5
+            </span>
+            <span className="muted">{dateLabel(feedback.createdAt)}</span>
+          </div>
+          <p style={{ marginTop: 12 }}>{feedback.comment}</p>
+        </div>
+      ))}
+      <form onSubmit={handleSubmit((values) => save.mutate(values))}>
+        <div className="stack-sm">
+          <Field label="Interview feedback" error={errors.comment?.message}>
+            <textarea
+              rows={4}
+              maxLength={3000}
+              placeholder="What did you learn about their experience and skills?"
+              {...register('comment', {
+                required: 'Add your feedback.',
+                minLength: { value: 3, message: 'Add at least 3 characters.' },
+              })}
+            />
+          </Field>
+          <Field label="Role-specific assessment">
+            <select {...register('rating')}>
+              <option value="1">1 · Significant gaps</option>
+              <option value="2">2 · Some gaps</option>
+              <option value="3">3 · Meets expectations</option>
+              <option value="4">4 · Strong evidence</option>
+              <option value="5">5 · Exceptional evidence</option>
+            </select>
+          </Field>
+          <Button type="submit" loading={save.isPending}>
+            <MessageSquare size={16} />
+            Add feedback
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
 }
 export function CandidateProfile({ id }: { id: string }) {
   const candidate = useApi<Candidate>(`/candidates/${id}`);
@@ -35,12 +190,201 @@ export function CandidateProfile({ id }: { id: string }) {
   const [hiring, setHiring] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const router = useRouter();
-  const move = useAction(async (stage: Stage) => (await api.patch(`/candidates/${id}/stage`, { stage })).data, { success: 'Candidate stage updated.' });
-  const screen = useAction(async () => (await api.post('/ai/screen-resume', { candidateId: id })).data, { success: 'Assessment saved. Ready for your review.' });
-  const remove = useAction(async () => (await api.delete(`/candidates/${id}`)).data, { success: 'Candidate removed.', onSuccess: () => router.push(`/app/recruiting/jobs/${candidate.data?.jobId}`) });
+  const move = useAction(
+    async (stage: Stage) => (await api.patch(`/candidates/${id}/stage`, { stage })).data,
+    { success: 'Candidate stage updated.' },
+  );
+  const screen = useAction(
+    async () => (await api.post('/ai/screen-resume', { candidateId: id })).data,
+    { success: 'Assessment saved. Ready for your review.' },
+  );
+  const remove = useAction(async () => (await api.delete(`/candidates/${id}`)).data, {
+    success: 'Candidate removed.',
+    onSuccess: () => router.push(`/app/recruiting/jobs/${candidate.data?.jobId}`),
+  });
   if (candidate.isPending) return <Loading />;
-  if (candidate.error) return <ErrorState error={candidate.error} retry={() => void candidate.refetch()} />;
+  if (candidate.error)
+    return <ErrorState error={candidate.error} retry={() => void candidate.refetch()} />;
   const data = candidate.data;
   const write = canRecruit(session?.role);
-  return <><Link className="back-link" href={`/app/recruiting/jobs/${data.jobId}`}><ArrowLeft size={16} />Back to {data.job?.title ?? 'pipeline'}</Link><Panel><div className="profile-heading" style={{ marginTop: 0, paddingTop: 25 }}><Avatar name={data.name} size="lg" /><div style={{ paddingTop: 0 }}><h1>{data.name}</h1><p>{data.job?.title}</p><a className="text-link" href={`mailto:${data.email}`}><Mail size={15} />{data.email}</a></div><div className="row wrap" style={{ paddingTop: 0, flex: 'none' }}><Badge value={data.stage} />{write && data.stage === 'OFFER' && <Button onClick={() => setHiring(true)}>Hire candidate</Button>}</div></div></Panel><div className="candidate-layout" style={{ marginTop: 24 }}><div className="stack"><Panel><div className="profile-tabs" style={{ paddingTop: 20 }}><Tabs value={tab} onChange={setTab} tabs={[{ value: 'resume', label: 'Resume' }, { value: 'notes', label: 'Notes' }, { value: 'feedback', label: 'Interview feedback', count: data.feedbackJson?.length ?? 0 }]} /></div>{tab === 'resume' && <Resume key={`${id}:${data.resumeText?.length ?? 0}`} candidate={data} write={write} />}{tab === 'notes' && (write ? <Notes key={`${id}:${data.notes ?? ''}`} candidate={data} /> : <div className="panel-body prose">{data.notes || 'No notes yet.'}</div>)}{tab === 'feedback' && <Feedback candidate={data} />}</Panel></div><div className="stack"><Panel><PanelHeader title="Their journey so far" /><div className="panel-body stack-sm"><Field label="Pipeline stage"><select aria-label="Candidate pipeline stage" value={data.stage} disabled={!write || move.isPending || data.stage === 'HIRED'} onChange={event => move.mutate(event.target.value as Stage)}>{stages.filter(stage => stage !== 'HIRED' || data.stage === 'HIRED').map(stage => <option key={stage} value={stage}>{label(stage)}</option>)}</select></Field><p className="muted">Applied {dateLabel(data.createdAt)}</p>{data.stage === 'HIRED' && data.employeeId && isAdmin(session?.role) && <Link href={`/app/onboarding/${data.employeeId}`} className="text-link">Open their onboarding <ArrowUpRight size={15} /></Link>}</div></Panel><Panel><PanelHeader title="A helpful second look" action={<Sparkles size={19} className="accent-text" />} />{data.aiScore !== null ? <div className="panel-body"><div className="assessment"><div className="assessment-score">{data.aiScore}<small> / 100 skill relevance</small></div><p style={{ marginTop: 12 }}>{data.aiSummary}</p>{!!data.aiReasonsJson?.reasons?.length && <><h3 style={{ marginTop: 20, fontSize: 14 }}>Evidence from the resume</h3><ul>{data.aiReasonsJson.reasons.map((reason, i) => <li key={i}>{reason}</li>)}</ul></>}{!!data.aiReasonsJson?.missingSkills?.length && <><h3 style={{ marginTop: 16, fontSize: 14 }}>Areas to explore</h3><ul>{data.aiReasonsJson.missingSkills.map((skill, i) => <li key={i}>{skill}</li>)}</ul></>}</div></div> : <div className="panel-body"><p className="muted">Compare documented skills with this role’s requirements. Your copilot will explain the evidence and gaps.</p></div>}<div className="panel-body"><p className="field-hint" style={{ marginBottom: 16 }}>An aid for human review. Every hiring decision stays with your team.</p>{write && <Button variant="secondary" loading={screen.isPending} onClick={() => screen.mutate()}><Sparkles size={16} />{data.aiScore !== null ? 'Screen again' : 'Screen resume'}</Button>}</div></Panel>{write && data.stage !== 'HIRED' && <Button variant="ghost" style={{ color: '#c35b50', justifyContent: 'flex-start' }} onClick={() => setDeleting(true)}><Trash2 size={16} />Remove candidate</Button>}</div></div><HireDialog candidate={hiring ? data : null} job={data.job} onClose={() => setHiring(false)} /><Modal open={deleting} onOpenChange={setDeleting} title="Remove this candidate?" description="Their application, resume and feedback will be permanently removed."><div className="dialog-footer"><Button variant="secondary" onClick={() => setDeleting(false)}>Keep candidate</Button><Button variant="danger" loading={remove.isPending} onClick={() => remove.mutate()}>Remove candidate</Button></div></Modal></>;
+  return (
+    <>
+      <Link className="back-link" href={`/app/recruiting/jobs/${data.jobId}`}>
+        <ArrowLeft size={16} />
+        Back to {data.job?.title ?? 'pipeline'}
+      </Link>
+      <Panel>
+        <div className="profile-heading" style={{ marginTop: 0, paddingTop: 25 }}>
+          <Avatar name={data.name} size="lg" />
+          <div style={{ paddingTop: 0 }}>
+            <h1>{data.name}</h1>
+            <p>{data.job?.title}</p>
+            <a className="text-link" href={`mailto:${data.email}`}>
+              <Mail size={15} />
+              {data.email}
+            </a>
+          </div>
+          <div className="row wrap" style={{ paddingTop: 0, flex: 'none' }}>
+            <Badge value={data.stage} />
+            {write && data.stage === 'OFFER' && (
+              <Button onClick={() => setHiring(true)}>Hire candidate</Button>
+            )}
+          </div>
+        </div>
+      </Panel>
+      <div className="candidate-layout" style={{ marginTop: 24 }}>
+        <div className="stack">
+          <Panel>
+            <div className="profile-tabs" style={{ paddingTop: 20 }}>
+              <Tabs
+                value={tab}
+                onChange={setTab}
+                tabs={[
+                  { value: 'resume', label: 'Resume' },
+                  { value: 'notes', label: 'Notes' },
+                  {
+                    value: 'feedback',
+                    label: 'Interview feedback',
+                    count: data.feedbackJson?.length ?? 0,
+                  },
+                ]}
+              />
+            </div>
+            {tab === 'resume' && (
+              <Resume
+                key={`${id}:${data.resumeText?.length ?? 0}`}
+                candidate={data}
+                write={write}
+              />
+            )}
+            {tab === 'notes' &&
+              (write ? (
+                <Notes key={`${id}:${data.notes ?? ''}`} candidate={data} />
+              ) : (
+                <div className="panel-body prose">{data.notes || 'No notes yet.'}</div>
+              ))}
+            {tab === 'feedback' && <Feedback candidate={data} />}
+          </Panel>
+        </div>
+        <div className="stack">
+          <Panel>
+            <PanelHeader title="Their journey so far" />
+            <div className="panel-body stack-sm">
+              <Field label="Pipeline stage">
+                <select
+                  aria-label="Candidate pipeline stage"
+                  value={data.stage}
+                  disabled={!write || move.isPending || data.stage === 'HIRED'}
+                  onChange={(event) => move.mutate(event.target.value as Stage)}
+                >
+                  {stages
+                    .filter((stage) => stage !== 'HIRED' || data.stage === 'HIRED')
+                    .map((stage) => (
+                      <option key={stage} value={stage}>
+                        {label(stage)}
+                      </option>
+                    ))}
+                </select>
+              </Field>
+              <p className="muted">Applied {dateLabel(data.createdAt)}</p>
+              {data.stage === 'HIRED' && data.employeeId && isAdmin(session?.role) && (
+                <Link href={`/app/onboarding/${data.employeeId}`} className="text-link">
+                  Open their onboarding <ArrowUpRight size={15} />
+                </Link>
+              )}
+            </div>
+          </Panel>
+          <Panel>
+            <PanelHeader
+              title="A helpful second look"
+              action={<Sparkles size={19} className="accent-text" />}
+            />
+            {data.aiScore !== null ? (
+              <div className="panel-body">
+                <div className="assessment">
+                  <div className="assessment-score">
+                    {data.aiScore}
+                    <small> / 100 skill relevance</small>
+                  </div>
+                  <p style={{ marginTop: 12 }}>{data.aiSummary}</p>
+                  {!!data.aiReasonsJson?.reasons?.length && (
+                    <>
+                      <h3 style={{ marginTop: 20, fontSize: 14 }}>Evidence from the resume</h3>
+                      <ul>
+                        {data.aiReasonsJson.reasons.map((reason, i) => (
+                          <li key={i}>{reason}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                  {!!data.aiReasonsJson?.missingSkills?.length && (
+                    <>
+                      <h3 style={{ marginTop: 16, fontSize: 14 }}>Areas to explore</h3>
+                      <ul>
+                        {data.aiReasonsJson.missingSkills.map((skill, i) => (
+                          <li key={i}>{skill}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="panel-body">
+                <p className="muted">
+                  Compare documented skills with this role’s requirements. Your copilot will explain
+                  the evidence and gaps.
+                </p>
+              </div>
+            )}
+            <div className="panel-body">
+              <p className="field-hint" style={{ marginBottom: 16 }}>
+                An aid for human review. Every hiring decision stays with your team.
+              </p>
+              {write && (
+                <Button
+                  variant="secondary"
+                  loading={screen.isPending}
+                  onClick={() => screen.mutate()}
+                >
+                  <Sparkles size={16} />
+                  {data.aiScore !== null ? 'Screen again' : 'Screen resume'}
+                </Button>
+              )}
+            </div>
+          </Panel>
+          {write && data.stage !== 'HIRED' && (
+            <Button
+              variant="ghost"
+              style={{ color: '#c35b50', justifyContent: 'flex-start' }}
+              onClick={() => setDeleting(true)}
+            >
+              <Trash2 size={16} />
+              Remove candidate
+            </Button>
+          )}
+        </div>
+      </div>
+      <HireDialog
+        candidate={hiring ? data : null}
+        job={data.job}
+        onClose={() => setHiring(false)}
+      />
+      <Modal
+        open={deleting}
+        onOpenChange={setDeleting}
+        title="Remove this candidate?"
+        description="Their application, resume and feedback will be permanently removed."
+      >
+        <div className="dialog-footer">
+          <Button variant="secondary" onClick={() => setDeleting(false)}>
+            Keep candidate
+          </Button>
+          <Button variant="danger" loading={remove.isPending} onClick={() => remove.mutate()}>
+            Remove candidate
+          </Button>
+        </div>
+      </Modal>
+    </>
+  );
 }
