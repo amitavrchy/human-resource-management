@@ -6,8 +6,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     POSTGRES_PASSWORD=peopleos \
     POSTGRES_DB=peopleos \
     PORT=10000 \
-    NODE_OPTIONS=--max-old-space-size=192 \
-    ALLOW_DEMO_SEED=true
+    ALLOW_DEMO_SEED=true \
+    DATABASE_URL=postgresql://peopleos:peopleos@127.0.0.1:5432/peopleos?schema=public
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -23,13 +23,15 @@ COPY package.json package-lock.json ./
 RUN npm ci --include=dev --ignore-scripts
 
 COPY . .
-RUN npx prisma generate \
-  && npx nest build \
+# Build needs more heap than free-tier runtime; runtime NODE_OPTIONS set below.
+RUN NODE_OPTIONS=--max-old-space-size=1536 npx prisma generate \
+  && NODE_OPTIONS=--max-old-space-size=1536 npx nest build \
   && mkdir -p /app/uploads \
   && chmod +x /app/docker-entrypoint-render.sh \
   && npm prune --omit=dev
 
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    NODE_OPTIONS=--max-old-space-size=192
 
 EXPOSE 10000
 ENTRYPOINT ["/app/docker-entrypoint-render.sh"]
