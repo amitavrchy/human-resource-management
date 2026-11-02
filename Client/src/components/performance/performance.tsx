@@ -23,11 +23,12 @@ import {
 function GoalForm({ close }: { close: () => void }) {
   const { data: session } = useSession();
   const people = useApi<Employee[]>('/employees/org-tree');
-  const { register, handleSubmit } = useForm<{
+  const { register, control, handleSubmit } = useForm<{
     employeeId: string;
     title: string;
     dueDate: string;
   }>({ defaultValues: { employeeId: session?.employeeId ?? '', title: '', dueDate: '' } });
+  const employeeId = useWatch({ control, name: 'employeeId' });
   const save = useAction(
     async (values: { employeeId: string; title: string; dueDate: string }) =>
       (await api.post('/goals', { ...values, dueDate: values.dueDate || undefined })).data,
@@ -37,7 +38,7 @@ function GoalForm({ close }: { close: () => void }) {
     <form onSubmit={handleSubmit((values) => save.mutate(values))}>
       <div className="stack-sm">
         <Field label="Whose goal?">
-          <select required {...register('employeeId', { required: true })}>
+          <select required value={employeeId} {...register('employeeId', { required: true })}>
             <option value="">Choose a teammate</option>
             {people.data?.map((person) => (
               <option value={person.id} key={person.id}>
@@ -74,7 +75,7 @@ function ReviewForm({ close }: { close: () => void }) {
   const { data: session } = useSession();
   const people = useApi<Employee[]>('/employees/org-tree');
   const date = new Date();
-  const { register, handleSubmit } = useForm<{
+  const { register, control, handleSubmit } = useForm<{
     employeeId: string;
     quarter: string;
     achievements: string;
@@ -89,6 +90,7 @@ function ReviewForm({ close }: { close: () => void }) {
       rating: '3',
     },
   });
+  const employeeId = useWatch({ control, name: 'employeeId' });
   const save = useAction(
     async (values: {
       employeeId: string;
@@ -104,7 +106,7 @@ function ReviewForm({ close }: { close: () => void }) {
       <div className="stack-sm">
         <div className="form-grid">
           <Field label="Team member">
-            <select required {...register('employeeId', { required: true })}>
+            <select required value={employeeId} {...register('employeeId', { required: true })}>
               <option value="">Choose a teammate</option>
               {people.data?.map((person) => (
                 <option value={person.id} key={person.id}>

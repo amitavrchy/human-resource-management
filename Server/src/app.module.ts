@@ -26,6 +26,8 @@ import { AiController } from './ai/ai.controller.js';
 import { AiService } from './ai/ai.service.js';
 import { ReportsController } from './reports/reports.controller.js';
 import { ReportsService } from './reports/reports.service.js';
+import { HealthController } from './health/health.controller.js';
+import { JobTemplatesController } from './organization/job-templates.controller.js';
 
 @Module({
   imports: [
@@ -49,6 +51,8 @@ import { ReportsService } from './reports/reports.service.js';
     PrismaModule,
   ],
   controllers: [
+    JobTemplatesController,
+    HealthController,
     AppController,
     AuthController,
     PeopleController,

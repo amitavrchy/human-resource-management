@@ -30,8 +30,12 @@ import {
   PanelHeader,
 } from '@/components/ui/core';
 
-type Collection = 'departments' | 'locations' | 'leave-policies' | 'onboarding-templates';
+type Collection =
+  'departments' | 'locations' | 'leave-policies' | 'onboarding-templates' | 'job-templates';
 interface SettingsRecord {
+  title?: string;
+  department?: string;
+  descriptionMd?: string;
   id: string;
   name: string;
   code?: string;
@@ -41,6 +45,7 @@ interface SettingsRecord {
   tasksJson?: { title: string }[];
 }
 const collectionNames = {
+  'job-templates': 'job template',
   departments: 'department',
   locations: 'location',
   'leave-policies': 'leave policy',
@@ -61,8 +66,14 @@ function RecordForm({
     code: string;
     annualDays: string;
     tasks: string;
+    title: string;
+    department: string;
+    descriptionMd: string;
   }>({
     defaultValues: {
+      title: record?.title ?? '',
+      department: record?.department ?? '',
+      descriptionMd: record?.descriptionMd ?? '',
       name: record?.name ?? '',
       country: record?.country ?? 'BD',
       code: record?.code ?? '',
@@ -79,8 +90,18 @@ function RecordForm({
       code: string;
       annualDays: string;
       tasks: string;
+      title: string;
+      department: string;
+      descriptionMd: string;
     }) => {
       const data = {
+        ...(collection === 'job-templates'
+          ? {
+              title: values.title,
+              department: values.department,
+              descriptionMd: values.descriptionMd,
+            }
+          : {}),
         name: values.name,
         ...(collection === 'locations' ? { country: values.country.toUpperCase() } : {}),
         ...(collection === 'leave-policies'
@@ -106,6 +127,25 @@ function RecordForm({
   return (
     <form onSubmit={handleSubmit((values) => save.mutate(values))}>
       <div className="stack-sm">
+        {collection === 'job-templates' && (
+          <>
+            <Field label="Role title">
+              <input required minLength={2} maxLength={160} {...register('title')} />
+            </Field>
+            <Field label="Department">
+              <input required maxLength={120} {...register('department')} />
+            </Field>
+            <Field label="Job description">
+              <textarea
+                required
+                minLength={20}
+                maxLength={30000}
+                rows={8}
+                {...register('descriptionMd')}
+              />
+            </Field>
+          </>
+        )}
         <Field label="Name">
           <input required maxLength={120} {...register('name', { required: true })} />
         </Field>
@@ -486,6 +526,7 @@ export function Settings() {
   const theme = useAppSelector((state) => state.ui.theme);
   const admin = isAdmin(session?.role);
   const meta = useApi<Metadata>('/organization/metadata');
+  const jobTemplates = useApi<SettingsRecord[]>('/job-templates', admin);
   const ai = useApi<{ available: boolean }>('/ai/status');
   const [tab, setTab] = useState(admin ? 'organization' : 'preferences');
   const [editing, setEditing] = useState<{
@@ -510,6 +551,7 @@ export function Settings() {
       ? [
           { value: 'organization', title: 'Organization' },
           { value: 'departments', title: 'Departments' },
+          { value: 'job-templates', title: 'Job templates' },
           { value: 'locations', title: 'Locations' },
           { value: 'leave-policies', title: 'Leave policies' },
           { value: 'onboarding-templates', title: 'Onboarding templates' },
@@ -521,15 +563,17 @@ export function Settings() {
     { value: 'security', title: 'Password & security' },
   ];
   const records =
-    tab === 'departments'
-      ? meta.data?.departments
-      : tab === 'locations'
-        ? meta.data?.locations
-        : tab === 'leave-policies'
-          ? meta.data?.policies
-          : tab === 'onboarding-templates'
-            ? meta.data?.templates
-            : undefined;
+    tab === 'job-templates'
+      ? jobTemplates.data
+      : tab === 'departments'
+        ? meta.data?.departments
+        : tab === 'locations'
+          ? meta.data?.locations
+          : tab === 'leave-policies'
+            ? meta.data?.policies
+            : tab === 'onboarding-templates'
+              ? meta.data?.templates
+              : undefined;
   const appearance = (next: 'light' | 'dark') => {
     dispatch(setTheme(next));
     localStorage.setItem('peopleos-theme', next);
@@ -641,7 +685,13 @@ export function Settings() {
               </Panel>
             </>
           )}
-          {['departments', 'locations', 'leave-policies', 'onboarding-templates'].includes(tab) &&
+          {[
+            'departments',
+            'locations',
+            'leave-policies',
+            'onboarding-templates',
+            'job-templates',
+          ].includes(tab) &&
             admin && (
               <Panel>
                 <PanelHeader

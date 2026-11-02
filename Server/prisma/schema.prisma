@@ -67,6 +67,7 @@ model Organization {
   leavePolicies       LeavePolicy[]
   leaveRequests       LeaveRequest[]
   jobs                Job[]
+  jobTemplates        JobTemplate[]
   candidates          Candidate[]
   documents           Document[]
   onboardingTemplates OnboardingTemplate[]
@@ -351,4 +352,16 @@ model Review {
   employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, employeeId])
+}
+
+model JobTemplate {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  title          String
+  department     String
+  descriptionMd  String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
 }

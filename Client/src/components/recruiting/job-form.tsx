@@ -4,7 +4,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAction, useApi, useSession } from '@/hooks/use-api';
-import type { Employee, Job, Metadata } from '@/lib/types';
+import type { Employee, Job, Metadata, JobTemplate } from '@/lib/types';
 import { fullName, isAdmin } from '@/lib/utils';
 import { Button, Field, Modal } from '@/components/ui/core';
 import { JdGenerator } from '@/components/ai/jd-generator';
@@ -40,6 +40,7 @@ export function JobDialog({
 }
 function JobForm({ job, close }: { job?: Job; close: () => void }) {
   const { data: session } = useSession();
+  const templates = useApi<JobTemplate[]>('/job-templates');
   const people = useApi<Employee[]>('/employees/org-tree', isAdmin(session?.role));
   const {
     register,
@@ -57,6 +58,7 @@ function JobForm({ job, close }: { job?: Job; close: () => void }) {
       hiringManagerId: job?.hiringManagerId ?? '',
     },
   });
+  const hiringManagerId = useWatch({ control, name: 'hiringManagerId' });
   const title = useWatch({ control, name: 'title' });
   const department = useWatch({ control, name: 'department' });
   const [generating, setGenerating] = useState(false);
@@ -69,6 +71,28 @@ function JobForm({ job, close }: { job?: Job; close: () => void }) {
     <>
       <form onSubmit={handleSubmit((values) => save.mutate(values))}>
         <div className="form-grid">
+          {!job && !!templates.data?.length && (
+            <Field label="Start from a template" className="full">
+              <select
+                defaultValue=""
+                onChange={(event) => {
+                  const template = templates.data?.find((item) => item.id === event.target.value);
+                  if (template) {
+                    setValue('title', template.title);
+                    setValue('department', template.department);
+                    setValue('descriptionMd', template.descriptionMd, { shouldValidate: true });
+                  }
+                }}
+              >
+                <option value="">Write from scratch</option>
+                {templates.data.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
           <Field label="Job title" className="full" error={errors.title?.message}>
             <input
               placeholder="Senior Frontend Engineer"
@@ -91,7 +115,7 @@ function JobForm({ job, close }: { job?: Job; close: () => void }) {
           </Field>
           {isAdmin(session?.role) && (
             <Field label="Hiring manager">
-              <select {...register('hiringManagerId')}>
+              <select value={hiringManagerId} {...register('hiringManagerId')}>
                 <option value="">Not assigned</option>
                 {people.data?.map((person) => (
                   <option value={person.id} key={person.id}>

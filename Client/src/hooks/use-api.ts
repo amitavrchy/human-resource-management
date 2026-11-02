@@ -7,7 +7,7 @@ import type { Session } from '@/lib/types';
 export function useSession() {
   return useQuery({
     queryKey: ['session'],
-    queryFn: async () => (await api.get<Session>('/me')).data,
+    queryFn: async ({ signal }) => (await api.get<Session>('/me', { signal })).data,
     retry: false,
     staleTime: 60000,
   });
@@ -16,7 +16,7 @@ export function useApi<T>(path: string, enabled = true) {
   const orgId = useAppSelector((state) => state.org.id);
   return useQuery({
     queryKey: ['org', orgId, path],
-    queryFn: async () => (await api.get<T>(path)).data,
+    queryFn: async ({ signal }) => (await api.get<T>(path, { signal })).data,
     enabled: enabled && !!orgId,
   });
 }

@@ -11,6 +11,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useId } from 'react';
+import { useReducedMotion } from 'framer-motion';
 
 export function HeadcountChart({
   data,
@@ -19,6 +20,7 @@ export function HeadcountChart({
   data: { month: string; count: number }[];
   small?: boolean;
 }) {
+  const reducedMotion = useReducedMotion();
   const id = useId().replace(/:/g, '');
   return (
     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -71,7 +73,7 @@ export function HeadcountChart({
           stroke="#8270db"
           strokeWidth={small ? 1.7 : 2.3}
           fill={`url(#${id})`}
-          isAnimationActive={!small}
+          isAnimationActive={!small && !reducedMotion}
           animationDuration={400}
         />
       </AreaChart>
@@ -87,6 +89,7 @@ export function CountBarChart({
   dataKey?: string;
   color?: string;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
       <BarChart
@@ -119,6 +122,7 @@ export function CountBarChart({
           }}
         />
         <Bar
+          isAnimationActive={!reducedMotion}
           dataKey={dataKey}
           fill={color}
           radius={[5, 5, 0, 0]}

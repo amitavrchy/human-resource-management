@@ -211,3 +211,11 @@ export interface ChatReply {
   answer: string;
   citations: { id: string; documentId: string; title: string; excerpt: string }[];
 }
+
+export interface JobTemplate {
+  id: string;
+  name: string;
+  title: string;
+  department: string;
+  descriptionMd: string;
+}

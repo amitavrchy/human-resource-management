@@ -7,6 +7,15 @@ import { ApiExceptionFilter } from './common/errors.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export function configureApp(app: INestApplication) {
+  const trustProxy = Number(process.env.TRUST_PROXY ?? 0);
+  if (!Number.isInteger(trustProxy) || trustProxy < 0 || trustProxy > 10)
+    throw new Error(
+      'TRUST_PROXY must be a trusted proxy hop count between 0 and 10.',
+    );
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .set('trust proxy', trustProxy || false);
   app.use(helmet());
   app.use(cookieParser());
   app.use(json({ limit: '512kb' }));
@@ -32,6 +41,13 @@ export function configureApp(app: INestApplication) {
   const attempts = new Map<string, { count: number; until: number }>();
   app.use((req: Request, res: Response, next: NextFunction) => {
     const now = Date.now();
+    if (
+      req.method === 'GET' &&
+      ['/health/live', '/health/ready'].includes(req.path)
+    ) {
+      next();
+      return;
+    }
     if (attempts.size > 10000)
       for (const [key, value] of attempts)
         if (value.until <= now) attempts.delete(key);

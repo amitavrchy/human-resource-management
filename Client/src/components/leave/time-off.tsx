@@ -79,7 +79,10 @@ function RequestForm({ close }: { close: () => void }) {
       <div className="stack-sm">
         {isAdmin(session?.role) && (
           <Field label="Request for" error={errors.employeeId?.message}>
-            <select {...register('employeeId', { required: 'Choose an employee.' })}>
+            <select
+              value={employeeId}
+              {...register('employeeId', { required: 'Choose an employee.' })}
+            >
               <option value="">Choose a teammate</option>
               {people.data?.map((person) => (
                 <option key={person.id} value={person.id}>

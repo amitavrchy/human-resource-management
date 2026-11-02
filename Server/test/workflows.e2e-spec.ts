@@ -319,6 +319,10 @@ describe('PeopleOS real-PostgreSQL workflows', () => {
       .expect(409);
   });
   it('supports filtered, sorted, bounded employee pagination', async () => {
+    const fullNameResult = await owner
+      .get('/employees?q=worker%20Tester')
+      .expect(200);
+    expect(fullNameResult.body.items[0].id).toBe(workerId);
     const result = (
       await owner
         .get('/employees?q=worker&limit=1&sortBy=firstName&sortOrder=desc')
@@ -413,13 +417,11 @@ describe('PeopleOS real-PostgreSQL workflows', () => {
     await employee.get('/jobs').expect(403);
     await manager.get(`/jobs/${jobId}`).expect(200);
     const otherJob = (
-      await owner
-        .post('/jobs')
-        .send({
-          title: 'Private role',
-          descriptionMd: 'A sufficiently detailed private job description.',
-          status: 'OPEN',
-        })
+      await owner.post('/jobs').send({
+        title: 'Private role',
+        descriptionMd: 'A sufficiently detailed private job description.',
+        status: 'OPEN',
+      })
     ).body;
     await manager.get(`/jobs/${otherJob.id}`).expect(404);
     const body = {
@@ -636,6 +638,45 @@ describe('PeopleOS real-PostgreSQL workflows', () => {
     expect(
       (await owner.get(`/employees/${outsiderId}`)).body.departmentId,
     ).toBeNull();
+  });
+  it('validates custom fields and required values, and isolates job templates', async () => {
+    await owner
+      .patch(`/employees/${workerId}`)
+      .send({ customFields: { 'Shirt size': 'M' } })
+      .expect(200);
+    expect(
+      (await employee.get(`/employees/${workerId}`)).body.customFields,
+    ).toEqual({ 'Shirt size': 'M' });
+    await owner
+      .patch(`/employees/${workerId}`)
+      .send({ customFields: { secret: { nested: true } } })
+      .expect(400);
+    await owner
+      .patch(`/employees/${workerId}`)
+      .send({ firstName: null })
+      .expect(400);
+    const templateBody = {
+      name: 'Engineering template',
+      title: 'Product Engineer',
+      department: 'Engineering',
+      descriptionMd: 'Build accessible, tested applications for growing teams.',
+    };
+    const template = (
+      await owner.post('/job-templates').send(templateBody).expect(201)
+    ).body;
+    await employee.get('/job-templates').expect(403);
+    expect(
+      (await recruiter.get('/job-templates').expect(200)).body.some(
+        (item: { id: string }) => item.id === template.id,
+      ),
+    ).toBe(true);
+    await other
+      .patch(`/job-templates/${template.id}`)
+      .send(templateBody)
+      .expect(404);
+    await owner.delete(`/job-templates/${template.id}`).expect(200);
+    await request(app.getHttpServer()).get('/health/live').expect(200);
+    await request(app.getHttpServer()).get('/health/ready').expect(200);
   });
   it('rotates refresh tokens and revokes access on logout and password change', async () => {
     const agent = request.agent(app.getHttpServer());

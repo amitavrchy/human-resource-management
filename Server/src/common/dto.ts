@@ -19,6 +19,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { PartialType } from '@nestjs/swagger';
+import { Validate, ValidateIf } from 'class-validator';
+import { CustomFieldsValidator } from './custom-fields.js';
 import {
   CandidateStage,
   EmploymentStatus,
@@ -58,6 +60,9 @@ export class PageDto {
   @IsOptional() @IsEnum(EmploymentStatus) status?: EmploymentStatus;
 }
 export class EmployeeDto {
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @Validate(CustomFieldsValidator)
+  customFields?: Record<string, string>;
   @IsString() @Transform(trim) @Length(1, 80) firstName: string;
   @IsString() @Transform(trim) @Length(1, 80) lastName: string;
   @IsEmail()
@@ -77,7 +82,9 @@ export class EmployeeDto {
   @IsOptional() @IsString() @MaxLength(100) emergencyName?: string;
   @IsOptional() @IsString() @MaxLength(40) emergencyPhone?: string;
 }
-export class UpdateEmployeeDto extends PartialType(EmployeeDto) {}
+export class UpdateEmployeeDto extends PartialType(EmployeeDto, {
+  skipNullProperties: false,
+}) {}
 export class NameDto {
   @IsString() @Transform(trim) @Length(1, 120) name: string;
 }
@@ -106,7 +113,9 @@ export class JobDto {
   @IsString() @Length(20, 30000) descriptionMd: string;
   @IsEnum(JobStatus) status: JobStatus;
 }
-export class UpdateJobDto extends PartialType(JobDto) {}
+export class UpdateJobDto extends PartialType(JobDto, {
+  skipNullProperties: false,
+}) {}
 export class CandidateDto {
   @IsString() @Transform(trim) @Length(2, 120) name: string;
   @IsEmail()
@@ -115,7 +124,9 @@ export class CandidateDto {
   @IsOptional() @IsString() @MaxLength(60000) resumeText?: string;
   @IsOptional() @IsString() @MaxLength(10000) notes?: string;
 }
-export class CandidateUpdateDto extends PartialType(CandidateDto) {}
+export class CandidateUpdateDto extends PartialType(CandidateDto, {
+  skipNullProperties: false,
+}) {}
 export class StageDto {
   @IsEnum(CandidateStage) stage: CandidateStage;
 }
@@ -202,4 +213,9 @@ export class IngestDto {
 export class PasswordDto {
   @IsString() @Length(1, 72) currentPassword: string;
   @IsString() @Length(12, 72) newPassword: string;
+}
+export class JobTemplateDto extends NameDto {
+  @IsString() @Transform(trim) @Length(2, 160) title: string;
+  @IsString() @Length(1, 120) department: string;
+  @IsString() @Length(20, 30000) descriptionMd: string;
 }

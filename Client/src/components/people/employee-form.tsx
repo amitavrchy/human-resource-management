@@ -1,5 +1,5 @@
 'use client';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { api } from '@/lib/api';
 import { useAction, useApi, useSession } from '@/hooks/use-api';
 import type { Employee, Metadata } from '@/lib/types';
@@ -21,7 +21,8 @@ type Values = Record<
   | 'endDate'
   | 'birthDate'
   | 'emergencyName'
-  | 'emergencyPhone',
+  | 'emergencyPhone'
+  | 'customFieldsText',
   string
 >;
 export function EmployeeDialog({
@@ -60,41 +61,47 @@ function EmployeeForm({ employee, close }: { employee?: Employee; close: () => v
   const people = useApi<Employee[]>('/employees/org-tree', admin);
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<Values>({
-    defaultValues: Object.fromEntries(
-      [
-        'firstName',
-        'lastName',
-        'workEmail',
-        'personalEmail',
-        'phone',
-        'title',
-        'departmentId',
-        'locationId',
-        'managerId',
-        'status',
-        'startDate',
-        'endDate',
-        'birthDate',
-        'emergencyName',
-        'emergencyPhone',
-      ].map((key) => [
-        key,
-        key === 'status'
-          ? (employee?.status ?? 'ONBOARDING')
-          : String((employee as unknown as Record<string, unknown> | undefined)?.[key] ?? '').slice(
-              0,
-              ['startDate', 'endDate', 'birthDate'].includes(key) ? 10 : undefined,
-            ),
-      ]),
-    ),
+    defaultValues: {
+      customFieldsText: Object.entries(employee?.customFields ?? {})
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n'),
+      ...Object.fromEntries(
+        [
+          'firstName',
+          'lastName',
+          'workEmail',
+          'personalEmail',
+          'phone',
+          'title',
+          'departmentId',
+          'locationId',
+          'managerId',
+          'status',
+          'startDate',
+          'endDate',
+          'birthDate',
+          'emergencyName',
+          'emergencyPhone',
+        ].map((key) => [
+          key,
+          key === 'status'
+            ? (employee?.status ?? 'ONBOARDING')
+            : String(
+                (employee as unknown as Record<string, unknown> | undefined)?.[key] ?? '',
+              ).slice(0, ['startDate', 'endDate', 'birthDate'].includes(key) ? 10 : undefined),
+        ]),
+      ),
+    },
   });
+  const formValues = useWatch({ control });
   const save = useAction(
     async (values: Values) => {
       const keys = admin
-        ? Object.keys(values)
+        ? Object.keys(values).filter((key) => key !== 'customFieldsText')
         : ['personalEmail', 'phone', 'emergencyName', 'emergencyPhone'];
       const data = Object.fromEntries(
         keys
@@ -107,8 +114,34 @@ function EmployeeForm({ employee, close }: { employee?: Employee; close: () => v
       );
       return (
         await (employee
-          ? api.patch(`/employees/${employee.id}`, data)
-          : api.post('/employees', data))
+          ? api.patch(`/employees/${employee.id}`, {
+              ...data,
+              ...(admin
+                ? {
+                    customFields: Object.fromEntries(
+                      (values.customFieldsText ?? '')
+                        .split('\n')
+                        .filter((line) => line.trim())
+                        .map((line) => {
+                          const index = line.indexOf(':');
+                          return [line.slice(0, index).trim(), line.slice(index + 1).trim()];
+                        }),
+                    ),
+                  }
+                : {}),
+            })
+          : api.post('/employees', {
+              ...data,
+              customFields: Object.fromEntries(
+                (values.customFieldsText ?? '')
+                  .split('\n')
+                  .filter((line) => line.trim())
+                  .map((line) => {
+                    const index = line.indexOf(':');
+                    return [line.slice(0, index).trim(), line.slice(index + 1).trim()];
+                  }),
+              ),
+            }))
       ).data;
     },
     {
@@ -142,7 +175,7 @@ function EmployeeForm({ employee, close }: { employee?: Employee; close: () => v
               <input maxLength={120} {...register('title')} />
             </Field>
             <Field label="Department">
-              <select {...register('departmentId')}>
+              <select value={formValues.departmentId ?? ''} {...register('departmentId')}>
                 <option value="">Unassigned</option>
                 {meta.data?.departments.map((dept) => (
                   <option value={dept.id} key={dept.id}>
@@ -152,7 +185,7 @@ function EmployeeForm({ employee, close }: { employee?: Employee; close: () => v
               </select>
             </Field>
             <Field label="Location">
-              <select {...register('locationId')}>
+              <select value={formValues.locationId ?? ''} {...register('locationId')}>
                 <option value="">Unassigned</option>
                 {meta.data?.locations.map((location) => (
                   <option value={location.id} key={location.id}>
@@ -162,7 +195,7 @@ function EmployeeForm({ employee, close }: { employee?: Employee; close: () => v
               </select>
             </Field>
             <Field label="Reports to">
-              <select {...register('managerId')}>
+              <select value={formValues.managerId ?? ''} {...register('managerId')}>
                 <option value="">No manager</option>
                 {people.data
                   ?.filter((person) => person.id !== employee?.id)
@@ -210,6 +243,27 @@ function EmployeeForm({ employee, close }: { employee?: Employee; close: () => v
         <Field label="Emergency phone">
           <input type="tel" maxLength={40} {...register('emergencyPhone')} />
         </Field>
+        {admin && (
+          <Field
+            label="Additional details"
+            className="full"
+            hint="One field per line: T-shirt size: M. Visible to the employee and HR."
+            error={errors.customFieldsText?.message}
+          >
+            <textarea
+              rows={3}
+              maxLength={11000}
+              {...register('customFieldsText', {
+                validate: (value) =>
+                  !(value ?? '')
+                    .split('\n')
+                    .filter((line) => line.trim())
+                    .some((line) => line.indexOf(':') < 1) ||
+                  'Use a name followed by a colon and a value on each line.',
+              })}
+            />
+          </Field>
+        )}
       </div>
       <div className="dialog-footer">
         <Button type="button" variant="secondary" onClick={close}>

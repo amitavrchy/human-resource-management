@@ -44,13 +44,18 @@ export class PeopleService {
       ...(query.departmentId ? { departmentId: query.departmentId } : {}),
       ...(query.locationId ? { locationId: query.locationId } : {}),
       ...(query.status ? { status: query.status } : {}),
-      ...(query.q
+      ...(query.q?.trim()
         ? {
-            OR: ['firstName', 'lastName', 'workEmail', 'title'].map(
-              (field) => ({
-                [field]: { contains: query.q, mode: 'insensitive' },
-              }),
-            ),
+            AND: query.q
+              .trim()
+              .split(/\s+/)
+              .map((term) => ({
+                OR: ['firstName', 'lastName', 'workEmail', 'title'].map(
+                  (field) => ({
+                    [field]: { contains: term, mode: 'insensitive' },
+                  }),
+                ),
+              })),
           }
         : {}),
     };
@@ -248,18 +253,30 @@ export class PeopleService {
             'Transfer the owner role before archiving this employee.',
           );
       }
-      const start = dto.startDate ? dateOnly(dto.startDate) : current.startDate;
-      const end = dto.endDate
-        ? dateOnly(dto.endDate)
-        : dto.endDate === undefined
-          ? current.endDate
-          : null;
+      const changes = this.employeeData(dto);
+      if (dto.status === 'TERMINATED' && dto.endDate === undefined)
+        changes.endDate =
+          current.endDate ?? dateOnly(new Date().toISOString().slice(0, 10));
+      if (
+        dto.status &&
+        dto.status !== 'TERMINATED' &&
+        dto.endDate === undefined
+      )
+        changes.endDate = null;
+      const start =
+        dto.startDate === undefined
+          ? current.startDate
+          : dto.startDate
+            ? dateOnly(dto.startDate)
+            : null;
+      const end =
+        changes.endDate !== undefined ? changes.endDate : current.endDate;
       if (start && end && end < start)
         throw new BadRequestException('End date must follow start date.');
       await this.validateReferences(tx, actor, dto, id);
       const employee = await tx.employee.update({
         where: { id, organizationId: actor.organizationId },
-        data: this.employeeData(dto),
+        data: changes,
       });
       await tx.auditLog.create({
         data: {

@@ -163,6 +163,7 @@ export function EmployeeProfile({ id }: { id: string }) {
                     ['Date of birth', dateLabel(person.birthDate)],
                     ['Emergency contact', person.emergencyName],
                     ['Emergency phone', person.emergencyPhone],
+                    ...Object.entries(person.customFields ?? {}),
                   ].map(([key, value]) => (
                     <div className="info-item" key={key}>
                       <span>{key}</span>
