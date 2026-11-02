@@ -1,0 +1,32 @@
+FROM node:24-bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PGDATA=/var/lib/postgresql/data \
+    POSTGRES_USER=peopleos \
+    POSTGRES_PASSWORD=peopleos \
+    POSTGRES_DB=peopleos \
+    NODE_ENV=production \
+    PORT=10000 \
+    NODE_OPTIONS=--max-old-space-size=192 \
+    ALLOW_DEMO_SEED=true
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+       postgresql postgresql-contrib \
+       openssl ca-certificates curl gosu \
+  && rm -rf /var/lib/apt/lists/* \
+  && mkdir -p /var/run/postgresql "$PGDATA" \
+  && chown -R postgres:postgres /var/run/postgresql "$PGDATA"
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+
+COPY . .
+RUN npx prisma generate && npm run build \
+  && mkdir -p /app/uploads \
+  && chmod +x /app/docker-entrypoint-render.sh
+
+EXPOSE 10000
+ENTRYPOINT ["/app/docker-entrypoint-render.sh"]
