@@ -24,6 +24,12 @@ def test_private_endpoints_require_service_token(monkeypatch):
     monkeypatch.setenv("AI_SERVICE_TOKEN", "x" * 32)
     with TestClient(app) as client:
         assert (
+            client.get(
+                "/api/v2/tenants/default_tenant/databases/default_database/collections"
+            ).status_code
+            == 404
+        )
+        assert (
             client.post(
                 "/v1/handbook/chat", json={"orgId": "a", "message": "hello", "documentIds": []}
             ).status_code

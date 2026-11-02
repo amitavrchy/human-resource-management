@@ -48,12 +48,19 @@ export function configureApp(app: INestApplication) {
       next();
       return;
     }
-    if (attempts.size > 10000)
+    if (attempts.size >= 10000)
       for (const [key, value] of attempts)
         if (value.until <= now) attempts.delete(key);
     const auth = req.path.startsWith('/auth/') && req.method === 'POST';
     const key = `${req.ip}:${auth ? 'auth' : 'api'}`;
     let state = attempts.get(key);
+    if (!state && attempts.size >= 10000) {
+      res.setHeader('Retry-After', 60);
+      res
+        .status(429)
+        .json({ message: 'Service is busy. Please try again shortly.' });
+      return;
+    }
     if (!state || state.until <= now) {
       state = { count: 0, until: now + 60000 };
       attempts.set(key, state);

@@ -37,13 +37,25 @@ import { JobTemplatesController } from './organization/job-templates.controller.
         const secret = env.JWT_SECRET;
         if (
           typeof secret !== 'string' ||
-          secret.length < 32 ||
+          secret.trim().length < 32 ||
           /replace|change-me/i.test(secret)
         )
           throw new Error(
             'JWT_SECRET must contain at least 32 random characters.',
           );
         if (!env.DATABASE_URL) throw new Error('DATABASE_URL is required.');
+        const aiToken = env.AI_SERVICE_TOKEN;
+        if (
+          aiToken &&
+          (typeof aiToken !== 'string' ||
+            aiToken.trim().length < 32 ||
+            /replace|change-me/i.test(aiToken))
+        )
+          throw new Error(
+            'AI_SERVICE_TOKEN must contain at least 32 random characters.',
+          );
+        if (env.NODE_ENV === 'production' && !env.CLIENT_ORIGIN)
+          throw new Error('CLIENT_ORIGIN is required in production.');
         return env;
       },
     }),

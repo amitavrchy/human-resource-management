@@ -59,7 +59,7 @@ def embeddings():
 
 @lru_cache
 def vector_store():
-    return chromadb.PersistentClient(path=os.getenv("CHROMA_PATH", "./chroma"))
+    return chromadb.PersistentClient(path=os.getenv("CHROMA_PATH", "./chroma"), settings=chromadb.Settings(anonymized_telemetry=False))
 
 
 def collection_name(org_id: str) -> str:
@@ -123,7 +123,7 @@ def ingest(request: IngestRequest):
         raise HTTPException(422, "No readable text found.")
     vectors = embeddings().embed_documents(chunks)
     collection = vector_store().get_or_create_collection(
-        collection_name(request.orgId), metadata={"hnsw:space": "cosine"}
+        collection_name(request.orgId), metadata={"hnsw:space": "cosine"}, embedding_function=None
     )
     version = hashlib.sha256(request.text.encode()).hexdigest()[:16]
     ids = [f"{request.docId}:{version}:{i}" for i in range(len(chunks))]
@@ -144,7 +144,9 @@ def chat(request: ChatRequest):
     if not request.documentIds:
         return {"answer": UNKNOWN, "citations": []}
     try:
-        collection = vector_store().get_collection(collection_name(request.orgId))
+        collection = vector_store().get_collection(
+            collection_name(request.orgId), embedding_function=None
+        )
     except chromadb.errors.NotFoundError:
         return {"answer": UNKNOWN, "citations": []}
     if not collection.count():

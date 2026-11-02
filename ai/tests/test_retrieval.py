@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+from unittest.mock import Mock
 
 import chromadb
 import pytest
@@ -92,6 +93,18 @@ def test_ingest_is_durable_and_replaces_obsolete_chunks(provider):
     ingest("org-a", "leave", "Annual leave is twenty-five working days per year.")
     assert collection.count() == 1
     assert "twenty-five" in collection.get()["documents"][0]
+
+
+def test_persistent_collections_do_not_load_embedding_plugins(provider, monkeypatch):
+    store, _ = provider
+    create = Mock(wraps=store.get_or_create_collection)
+    get = Mock(wraps=store.get_collection)
+    monkeypatch.setattr(store, "get_or_create_collection", create)
+    monkeypatch.setattr(store, "get_collection", get)
+    ingest("org-a", "leave", "Annual leave is twenty working days per year.")
+    ask("org-a", ["leave"], "What is annual leave?")
+    assert create.call_args.kwargs["embedding_function"] is None
+    assert get.call_args.kwargs["embedding_function"] is None
 
 
 def test_retrieval_never_crosses_tenants_or_document_allowlists(provider):

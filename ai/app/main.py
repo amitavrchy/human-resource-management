@@ -16,7 +16,8 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    if len(os.getenv("AI_SERVICE_TOKEN", "")) < 32:
+    token = os.getenv("AI_SERVICE_TOKEN", "").strip()
+    if len(token) < 32 or token.startswith(("replace", "change-me")):
         raise RuntimeError("AI_SERVICE_TOKEN must contain at least 32 random characters.")
     yield
 
