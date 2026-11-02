@@ -123,14 +123,17 @@
   background: var(--surface);
   min-height: 100dvh;
 }
+.marketing-container {
+  width: 90%;
+  margin-inline: auto;
+}
 .marketing-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 30px;
-  max-width: 1200px;
   margin: auto;
-  padding: 26px 32px;
+  padding: 26px 0;
 }
 .marketing-nav > div {
   display: flex;
@@ -140,10 +143,8 @@
   color: var(--muted);
 }
 .marketing-hero {
-  max-width: 900px;
   margin: 65px auto 55px;
   text-align: center;
-  padding: 0 24px;
 }
 .hero-pill {
   display: inline-flex;
@@ -177,15 +178,14 @@
 }
 .hero-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 12px;
   margin-top: 30px;
 }
 .marketing-preview {
-  max-width: 1100px;
   margin: 0 auto 75px;
-  padding: 0 24px;
 }
 .preview-window {
   border: 1px solid var(--border);
@@ -278,9 +278,8 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
-  max-width: 1150px;
   margin: 0 auto;
-  padding: 30px 25px 85px;
+  padding: 30px 0 85px;
 }
 .marketing-feature-grid > div {
   padding: 10px;
@@ -310,8 +309,7 @@
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid var(--border);
-  padding: 28px 32px;
-  max-width: 1200px;
+  padding: 28px 0;
   margin: auto;
   color: var(--muted);
   font-size: 14px;
@@ -319,7 +317,7 @@
 .marketing-cta {
   background: #efedfa;
   text-align: center;
-  padding: 60px 24px;
+  padding: 60px 0;
   color: #2b2544;
 }
 .marketing-cta h2 {

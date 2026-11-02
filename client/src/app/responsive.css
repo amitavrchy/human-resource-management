@@ -183,7 +183,7 @@
     top: 28px;
   }
   .marketing-nav {
-    padding: 22px 24px;
+    padding: 22px 0;
   }
   .marketing-nav > div > .marketing-nav-link {
     display: none;
@@ -465,10 +465,19 @@
     padding: 14px 16px;
   }
   .marketing-nav {
-    padding: 22px 19px;
+    padding: 22px 0;
+    gap: 12px;
+    flex-wrap: wrap;
   }
   .marketing-nav > div {
     gap: 12px;
+    margin-left: auto;
+  }
+  .marketing-nav > .brand {
+    font-size: 22px;
+  }
+  .marketing-nav a {
+    white-space: nowrap;
   }
   .marketing-nav .btn {
     padding: 8px 11px;
@@ -476,9 +485,6 @@
   .marketing-hero h1 {
     font-size: 39px;
     letter-spacing: -1.7px;
-  }
-  .marketing-preview {
-    padding: 0 16px;
   }
   .preview-window {
     grid-template-columns: 1fr;
@@ -496,12 +502,12 @@
     display: none;
   }
   .marketing-feature-grid {
-    padding: 10px 20px 45px;
+    padding: 10px 0 45px;
     gap: 10px;
     grid-template-columns: 1fr;
   }
   .marketing-footer {
-    padding: 24px 20px;
+    padding: 24px 0;
     flex-direction: column;
     gap: 15px;
   }

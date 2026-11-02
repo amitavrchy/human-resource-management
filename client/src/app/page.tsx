@@ -16,7 +16,7 @@ import { Avatar, Badge } from '@/components/ui/core';
 export default function Home() {
   return (
     <div className="marketing">
-      <header className="marketing-nav">
+      <header className="marketing-nav marketing-container">
         <Brand />
         <div>
           <a href="#features" className="marketing-nav-link">
@@ -29,7 +29,7 @@ export default function Home() {
         </div>
       </header>
       <main>
-        <section className="marketing-hero">
+        <section className="marketing-hero marketing-container">
           <span className="hero-pill">
             <Sparkles size={15} />
             People first. Busywork last.
@@ -52,7 +52,10 @@ export default function Home() {
             </Link>
           </div>
         </section>
-        <section className="marketing-preview" aria-label="Illustrative PeopleOS workspace preview">
+        <section
+          className="marketing-preview marketing-container"
+          aria-label="Illustrative PeopleOS workspace preview"
+        >
           <div className="preview-window">
             <div className="preview-sidebar">
               <Brand />
@@ -103,7 +106,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-        <section id="features" className="marketing-feature-grid">
+        <section id="features" className="marketing-feature-grid marketing-container">
           {[
             {
               icon: Users,
@@ -136,14 +139,16 @@ export default function Home() {
           ))}
         </section>
         <section className="marketing-cta">
-          <h2>Less busywork. More possibility.</h2>
-          <p>Give your people a workspace they’ll feel good about.</p>
-          <Link className="btn btn-primary" href="/register">
-            Create your workspace <ArrowRight size={17} />
-          </Link>
+          <div className="marketing-container">
+            <h2>Less busywork. More possibility.</h2>
+            <p>Give your people a workspace they’ll feel good about.</p>
+            <Link className="btn btn-primary" href="/register">
+              Create your workspace <ArrowRight size={17} />
+            </Link>
+          </div>
         </section>
       </main>
-      <footer className="marketing-footer">
+      <footer className="marketing-footer marketing-container">
         <Brand />
         <span>People ops without the busywork.</span>
         <Link className="text-link" href="/login">
