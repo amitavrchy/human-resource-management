@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+.local
+docs
+.github
+.env
+.env.*
+!.env.example
+uploads
+test
+*.log
+*.tsbuildinfo

@@ -1,7 +1,0 @@
-{
-  "reviewBy": "2026-12-02",
-  "package": "chromadb",
-  "version": "1.5.9",
-  "ignoredVulnerabilities": ["PYSEC-2026-311", "PYSEC-2026-3813", "PYSEC-2026-3814", "PYSEC-2026-3815"],
-  "reason": "No published patched release at verification time. PeopleOS uses private embedded Rust-backed PersistentClient, never mounts Chroma HTTP APIs or SimpleRBAC, supplies vectors explicitly, disables collection embedding plugins, rejects arbitrary configuration fields, and enforces tenant/document allowlists in authenticated NestJS/FastAPI routes. See docs/SECURITY.md."
-}
