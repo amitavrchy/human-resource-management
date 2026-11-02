@@ -178,7 +178,7 @@ export class MemberDto {
   @IsEmail()
   @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
   email: string;
-  @IsString() @Length(12, 72) password: string;
+  @IsOptional() @IsString() @Length(12, 72) password?: string;
   @IsEnum(OrgRole) role: OrgRole;
   @IsOptional() @IsString() @MaxLength(100) employeeId?: string;
 }

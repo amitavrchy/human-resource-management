@@ -78,7 +78,11 @@ export class FilesService {
     return createReadStream(path);
   }
   async bytes(key: string) {
-    return readFile(this.path(key));
+    try {
+      return await readFile(this.path(key));
+    } catch {
+      throw new NotFoundException('File is unavailable.');
+    }
   }
   async remove(key: string) {
     try {

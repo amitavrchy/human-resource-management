@@ -166,7 +166,11 @@ export class LifecycleService {
     return this.db.$transaction(async (tx) => {
       const review = await tx.review.create({
         data: {
-          ...dto,
+          employeeId: dto.employeeId,
+          quarter: dto.quarter,
+          achievements: dto.achievements,
+          improvements: dto.improvements,
+          rating: dto.rating,
           organizationId: actor.organizationId,
           authorUserId: actor.userId,
         },

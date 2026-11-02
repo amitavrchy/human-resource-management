@@ -345,8 +345,17 @@ function MemberForm({ close }: { close: () => void }) {
       role: Role;
       employeeId: string;
     }) =>
-      (await api.post('/members', { ...values, employeeId: values.employeeId || undefined })).data,
-    { success: 'Workspace access created. Share the initial password securely.', onSuccess: close },
+      (
+        await api.post('/members', {
+          ...values,
+          password: values.password || undefined,
+          employeeId: values.employeeId || undefined,
+        })
+      ).data,
+    {
+      success: 'Workspace access created. Existing account passwords are preserved.',
+      onSuccess: close,
+    },
   );
   return (
     <form onSubmit={handleSubmit((values) => save.mutate(values))}>
@@ -359,15 +368,14 @@ function MemberForm({ close }: { close: () => void }) {
         </Field>
         <Field
           label="Initial password"
-          hint="Share it securely. The member can change it from their settings."
+          hint="Required for new accounts. Leave blank for an existing account; its current password is preserved."
         >
           <input
             type="password"
             autoComplete="new-password"
-            required
             minLength={12}
             maxLength={72}
-            {...register('password', { required: true, minLength: 12 })}
+            {...register('password')}
           />
         </Field>
         <Field label="Workspace role">
@@ -417,6 +425,14 @@ function Members() {
   const router = useRouter();
   const { data: session } = useSession();
   const [adding, setAdding] = useState(false);
+  const [removing, setRemoving] = useState<Member | null>(null);
+  const revoke = useAction(
+    async (member: Member) => (await api.delete(`/members/${member.id}`)).data,
+    {
+      success: 'Workspace access revoked. Employee history is preserved.',
+      onSuccess: () => setRemoving(null),
+    },
+  );
   const [changing, setChanging] = useState<{ member: Member; role: Role } | null>(null);
   const query = useQueryClient();
   const change = useAction(
@@ -460,33 +476,69 @@ function Members() {
                   <small>{member.user.email}</small>
                 </span>
               </div>
-              <select
-                className="filter-select"
-                value={member.role}
-                disabled={
-                  (member.role === 'OWNER' && session?.role !== 'OWNER') || change.isPending
-                }
-                aria-label={`Role for ${member.user.name}`}
-                onChange={(event) => setChanging({ member, role: event.target.value as Role })}
-              >
-                {(
-                  [
-                    'EMPLOYEE',
-                    'MANAGER',
-                    'RECRUITER',
-                    'HR_ADMIN',
-                    ...(session?.role === 'OWNER' || member.role === 'OWNER' ? ['OWNER'] : []),
-                  ] as Role[]
-                ).map((role) => (
-                  <option value={role} key={role}>
-                    {label(role)}
-                  </option>
-                ))}
-              </select>
+              <div className="row">
+                <select
+                  className="filter-select"
+                  value={member.role}
+                  disabled={
+                    (member.role === 'OWNER' && session?.role !== 'OWNER') || change.isPending
+                  }
+                  aria-label={`Role for ${member.user.name}`}
+                  onChange={(event) => setChanging({ member, role: event.target.value as Role })}
+                >
+                  {(
+                    [
+                      'EMPLOYEE',
+                      'MANAGER',
+                      'RECRUITER',
+                      'HR_ADMIN',
+                      ...(session?.role === 'OWNER' || member.role === 'OWNER' ? ['OWNER'] : []),
+                    ] as Role[]
+                  ).map((role) => (
+                    <option value={role} key={role}>
+                      {label(role)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="icon-button"
+                  disabled={
+                    member.id === session?.membershipId ||
+                    (member.role === 'OWNER' && session?.role !== 'OWNER')
+                  }
+                  aria-label={`Revoke access for ${member.user.name}`}
+                  onClick={() => setRemoving(member)}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
           ))
         )}
       </Panel>
+      <Modal
+        open={!!removing}
+        onOpenChange={() => setRemoving(null)}
+        title="Remove workspace access?"
+        description={removing?.user.name}
+      >
+        <p className="muted">
+          Their sessions will end immediately. Their employee record and history remain in your
+          workspace.
+        </p>
+        <div className="dialog-footer">
+          <Button variant="secondary" onClick={() => setRemoving(null)}>
+            Keep access
+          </Button>
+          <Button
+            variant="danger"
+            loading={revoke.isPending}
+            onClick={() => removing && revoke.mutate(removing)}
+          >
+            Revoke access
+          </Button>
+        </div>
+      </Modal>
       <Modal
         open={adding}
         onOpenChange={setAdding}
@@ -711,10 +763,13 @@ export function Settings() {
                     </Button>
                   }
                 />
-                {meta.isPending ? (
+                {(tab === 'job-templates' ? jobTemplates : meta).isPending ? (
                   <Loading />
-                ) : meta.error ? (
-                  <ErrorState error={meta.error} retry={() => void meta.refetch()} />
+                ) : (tab === 'job-templates' ? jobTemplates : meta).error ? (
+                  <ErrorState
+                    error={(tab === 'job-templates' ? jobTemplates : meta).error}
+                    retry={() => void (tab === 'job-templates' ? jobTemplates : meta).refetch()}
+                  />
                 ) : records?.length ? (
                   (records as SettingsRecord[]).map((record) => (
                     <div className="settings-list-row" key={record.id}>

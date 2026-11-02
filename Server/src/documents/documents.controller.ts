@@ -53,7 +53,8 @@ export class DocumentsController {
     // Multipart booleans arrive as strings. Validate after explicit conversion.
     if (
       body.isHandbook !== undefined &&
-      !['true', 'false'].includes(String(body.isHandbook))
+      (typeof body.isHandbook !== 'string' ||
+        !['true', 'false'].includes(body.isHandbook))
     )
       throw new BadRequestException('Invalid handbook flag.');
     const dto = plainToInstance(DocumentDto, {

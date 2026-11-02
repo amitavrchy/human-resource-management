@@ -118,9 +118,10 @@ export class RecruitingController {
     @CurrentActor() a: Actor,
     @Param('id') id: string,
   ) {
-    return new StreamableFile(await this.recruiting.resume(a, id), {
+    const file = await this.recruiting.resume(a, id);
+    return new StreamableFile(file.buffer, {
       type: 'application/octet-stream',
-      disposition: 'attachment; filename="resume"',
+      disposition: `attachment; filename="${file.filename}"`,
     });
   }
 }

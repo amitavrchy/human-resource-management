@@ -347,7 +347,9 @@ describe('PeopleOS real-PostgreSQL workflows', () => {
       owner.post(`/leave-requests/${leave.id}/approve`),
       owner.post(`/leave-requests/${leave.id}/approve`),
     ]);
-    expect(outcomes.map((result) => result.status).sort()).toEqual([201, 409]);
+    expect(
+      outcomes.map((result) => result.status).sort((a, b) => a - b),
+    ).toEqual([201, 409]);
     const balance = async () =>
       (await employee.get(`/leave-balances?year=${year}`)).body.find(
         (item: { policyId: string }) => item.policyId === policyId,
@@ -473,6 +475,27 @@ describe('PeopleOS real-PostgreSQL workflows', () => {
       .expect(200);
     result = (await recruiter.get(`/candidates/${candidateId}`)).body;
     expect(result.aiScore).toBeNull();
+  });
+  it('keeps uploaded resumes private and downloads their original bytes with the correct filename', async () => {
+    const text =
+      'React and TypeScript engineer with accessible UI and integration testing experience.';
+    await recruiter
+      .post(`/candidates/${candidateId}/resume`)
+      .attach('file', Buffer.from(text), {
+        filename: 'candidate.txt',
+        contentType: 'text/plain',
+      })
+      .expect(201);
+    const downloaded = await recruiter
+      .get(`/candidates/${candidateId}/resume`)
+      .expect(200);
+    expect(downloaded.headers['content-disposition']).toContain('resume.txt');
+    expect(downloaded.body.toString('utf8')).toBe(text);
+    await other.get(`/candidates/${candidateId}/resume`).expect(404);
+    await employee.get(`/candidates/${candidateId}/resume`).expect(403);
+    expect(
+      (await recruiter.get(`/candidates/${candidateId}`)).body.resumeText,
+    ).toBe(text);
   });
   it('hires idempotently under concurrency and creates balances plus the default checklist', async () => {
     await recruiter
@@ -677,6 +700,59 @@ describe('PeopleOS real-PostgreSQL workflows', () => {
     await owner.delete(`/job-templates/${template.id}`).expect(200);
     await request(app.getHttpServer()).get('/health/live').expect(200);
     await request(app.getHttpServer()).get('/health/ready').expect(200);
+  });
+  it('revokes membership sessions, reconnects existing accounts without changing their password and preserves tenant choice', async () => {
+    const created = (
+      await owner
+        .post('/members')
+        .send({
+          name: 'Access Tester',
+          email: email('access'),
+          password,
+          role: 'EMPLOYEE',
+        })
+        .expect(201)
+    ).body;
+    userIds.push(created.user.id);
+    const agent = request.agent(app.getHttpServer());
+    await agent
+      .post('/auth/login')
+      .send({ email: email('access'), password })
+      .expect(201);
+    await owner.delete(`/members/${created.id}`).expect(200);
+    await agent.get('/me').expect(401);
+    const reconnected = (
+      await owner
+        .post('/members')
+        .send({
+          name: 'Access Tester',
+          email: email('access'),
+          role: 'EMPLOYEE',
+        })
+        .expect(201)
+    ).body;
+    expect(reconnected.existingAccount).toBe(true);
+    await other
+      .post('/members')
+      .send({
+        name: 'Access Tester',
+        email: email('access'),
+        password: 'unused-new-password-2026',
+        role: 'RECRUITER',
+      })
+      .expect(201);
+    await agent
+      .post('/auth/login')
+      .send({
+        email: email('access'),
+        password,
+        organizationSlug: `beta-${tag}`,
+      })
+      .expect(201);
+    expect((await agent.get('/me')).body.organization.id).toBe(
+      b.organization.id,
+    );
+    await owner.delete(`/members/${a.membershipId}`).expect(409);
   });
   it('rotates refresh tokens and revokes access on logout and password change', async () => {
     const agent = request.agent(app.getHttpServer());

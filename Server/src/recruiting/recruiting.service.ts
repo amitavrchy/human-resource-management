@@ -78,10 +78,15 @@ export class RecruitingService {
     return this.db.$transaction(async (tx) => {
       await this.access.reference(tx, actor, 'employee', dto.hiringManagerId);
       const data = {
-        ...dto,
-        ...(dto.hiringManagerId !== undefined
-          ? { hiringManagerId: dto.hiringManagerId || null }
-          : {}),
+        title: dto.title,
+        department: dto.department,
+        location: dto.location,
+        descriptionMd: dto.descriptionMd,
+        status: dto.status,
+        hiringManagerId:
+          dto.hiringManagerId === undefined
+            ? undefined
+            : dto.hiringManagerId || null,
       };
       const job = id
         ? await tx.job.update({
@@ -89,7 +94,13 @@ export class RecruitingService {
             data,
           })
         : await tx.job.create({
-            data: { ...(data as JobDto), organizationId: actor.organizationId },
+            data: {
+              ...data,
+              title: dto.title!,
+              descriptionMd: dto.descriptionMd!,
+              status: dto.status!,
+              organizationId: actor.organizationId,
+            },
           });
       await tx.auditLog.create({
         data: {
@@ -147,7 +158,14 @@ export class RecruitingService {
       throw new ConflictException('Open the role before adding a candidate.');
     return this.db.$transaction(async (tx) => {
       const candidate = await tx.candidate.create({
-        data: { ...dto, organizationId: actor.organizationId, jobId },
+        data: {
+          name: dto.name,
+          email: dto.email,
+          resumeText: dto.resumeText,
+          notes: dto.notes,
+          organizationId: actor.organizationId,
+          jobId,
+        },
         select: candidateSelect,
       });
       await tx.auditLog.create({
@@ -169,7 +187,10 @@ export class RecruitingService {
       const candidate = await tx.candidate.update({
         where: { id, organizationId: actor.organizationId },
         data: {
-          ...dto,
+          name: dto.name,
+          email: dto.email,
+          resumeText: dto.resumeText,
+          notes: dto.notes,
           ...(dto.resumeText !== undefined
             ? { aiScore: null, aiSummary: null, aiReasonsJson: Prisma.DbNull }
             : {}),
@@ -244,7 +265,10 @@ export class RecruitingService {
       await this.people.validateReferences(tx, actor, dto);
       const [firstName, ...rest] = candidate.name.trim().split(/\s+/);
       const employee = await this.people.createInTransaction(tx, actor, {
-        ...dto,
+        departmentId: dto.departmentId,
+        locationId: dto.locationId,
+        managerId: dto.managerId,
+        startDate: dto.startDate,
         firstName,
         lastName: rest.join(' ') || firstName,
         workEmail: candidate.email,
@@ -283,7 +307,8 @@ export class RecruitingService {
           feedbackJson: [
             ...feedback,
             {
-              ...dto,
+              comment: dto.comment,
+              rating: dto.rating,
               authorUserId: actor.userId,
               createdAt: new Date().toISOString(),
             },
@@ -346,7 +371,14 @@ export class RecruitingService {
     });
     if (!candidate.resumeUrl)
       throw new NotFoundException('No resume uploaded.');
-    return this.files.stream(candidate.resumeUrl);
+    const buffer = await this.files.bytes(candidate.resumeUrl);
+    return {
+      buffer,
+      filename:
+        buffer.subarray(0, 5).toString() === '%PDF-'
+          ? 'resume.pdf'
+          : 'resume.txt',
+    };
   }
   async removeCandidate(actor: Actor, id: string) {
     requireRecruiting(actor, true);

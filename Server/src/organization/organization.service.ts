@@ -90,7 +90,11 @@ export class OrganizationService {
               data: dto as LocationDto,
             })
           : await tx.location.create({
-              data: { ...(dto as LocationDto), organizationId },
+              data: {
+                name: dto.name,
+                country: (dto as LocationDto).country,
+                organizationId,
+              },
             });
       else if (kind === 'policy') {
         const policy = dto as PolicyDto;
@@ -100,7 +104,12 @@ export class OrganizationService {
               data: policy,
             })
           : await tx.leavePolicy.create({
-              data: { ...policy, organizationId },
+              data: {
+                name: policy.name,
+                code: policy.code,
+                annualDays: policy.annualDays,
+                organizationId,
+              },
             });
         // Entitlement changes apply to newly initialized balances; never overwrite consumed balances.
       } else {
@@ -222,7 +231,7 @@ export class OrganizationService {
   async createMember(actor: Actor, dto: MemberDto) {
     requireAdmin(actor);
     if (dto.role === 'OWNER') requireRole(actor, 'OWNER');
-    const secret = await passwordHash(dto.password);
+    const secret = dto.password ? await passwordHash(dto.password) : undefined;
     return serializable(this.db, async (tx) => {
       if (dto.employeeId) {
         await this.access.reference(tx, actor, 'employee', dto.employeeId);
@@ -237,9 +246,18 @@ export class OrganizationService {
             'Use an unlinked employee with the same work email.',
           );
       }
-      const user = await tx.user.create({
-        data: { name: dto.name, email: dto.email, passwordHash: secret },
+      const existing = await tx.user.findUnique({
+        where: { email: dto.email },
       });
+      if (!existing && !secret)
+        throw new BadRequestException(
+          'New accounts require an initial password of at least 12 characters.',
+        );
+      const user =
+        existing ??
+        (await tx.user.create({
+          data: { name: dto.name, email: dto.email, passwordHash: secret! },
+        }));
       const member = await tx.membership.create({
         data: {
           userId: user.id,
@@ -262,10 +280,55 @@ export class OrganizationService {
         },
       });
       return {
+        existingAccount: !!existing,
         id: member.id,
         role: member.role,
         user: { id: user.id, name: user.name, email: user.email },
       };
+    });
+  }
+  async removeMember(actor: Actor, id: string) {
+    requireAdmin(actor);
+    if (id === actor.membershipId)
+      throw new ConflictException(
+        'Ask another owner to remove your own access.',
+      );
+    return serializable(this.db, async (tx) => {
+      const member = await tx.membership.findFirst({
+        where: { id, organizationId: actor.organizationId },
+      });
+      if (!member) throw new NotFoundException('Member not found.');
+      if (member.role === 'OWNER') {
+        requireRole(actor, 'OWNER');
+        if (
+          (await tx.membership.count({
+            where: { organizationId: actor.organizationId, role: 'OWNER' },
+          })) <= 1
+        )
+          throw new ConflictException(
+            'Your workspace must retain at least one owner.',
+          );
+      }
+      await tx.refreshSession.deleteMany({
+        where: { organizationId: actor.organizationId, userId: member.userId },
+      });
+      await tx.employee.updateMany({
+        where: { organizationId: actor.organizationId, membershipId: id },
+        data: { membershipId: null },
+      });
+      await tx.membership.delete({
+        where: { id, organizationId: actor.organizationId },
+      });
+      await tx.auditLog.create({
+        data: {
+          organizationId: actor.organizationId,
+          actorUserId: actor.userId,
+          action: 'member.access_revoked',
+          entityType: 'Membership',
+          entityId: id,
+        },
+      });
+      return { success: true };
     });
   }
   async changeRole(actor: Actor, id: string, dto: RoleDto) {

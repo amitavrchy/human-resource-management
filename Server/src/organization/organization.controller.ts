@@ -125,6 +125,12 @@ export class OrganizationController {
   @Get('members') members(@CurrentActor() a: Actor) {
     return this.org.members(a);
   }
+  @Delete('members/:id') removeMember(
+    @CurrentActor() a: Actor,
+    @Param('id') id: string,
+  ) {
+    return this.org.removeMember(a, id);
+  }
   @Post('members') member(@CurrentActor() a: Actor, @Body() d: MemberDto) {
     return this.org.createMember(a, d);
   }

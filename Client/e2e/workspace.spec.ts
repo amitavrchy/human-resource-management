@@ -9,6 +9,7 @@ if (!testUrl || !/(?:test|qa)/i.test(new URL(testUrl).pathname))
   );
 const db = new PrismaClient({ datasources: { db: { url: testUrl } } });
 const organizations: string[] = [];
+const detachedUsers: string[] = [];
 const password = 'Browser-test-password-2026!';
 const unique = () => randomUUID().slice(0, 8);
 
@@ -55,7 +56,9 @@ test.afterEach(async () => {
     select: { userId: true },
   });
   await db.organization.deleteMany({ where: { id: { in: ids } } });
-  await db.user.deleteMany({ where: { id: { in: members.map((member) => member.userId) } } });
+  await db.user.deleteMany({
+    where: { id: { in: [...members.map((member) => member.userId), ...detachedUsers.splice(0)] } },
+  });
 });
 test.afterAll(async () => {
   await db.$disconnect();
@@ -81,8 +84,41 @@ test('registers through the UI, signs out and signs in again', async ({ page }) 
   await expect(page).toHaveURL(/\/login/);
   await page.getByLabel('Work email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByText('Choose a specific workspace (optional)', { exact: true }).click();
+  await page.getByLabel('Workspace handle').fill(slug);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/app$/);
+});
+
+test('creates member access, changes its role and revokes it while preserving the employee', async ({
+  page,
+}) => {
+  await createWorkspace(page);
+  const person = await createPerson(page, 'Morgan');
+  await page.goto('/app/settings');
+  await page.getByRole('button', { name: 'Members & roles', exact: true }).click();
+  await page.getByRole('button', { name: 'Add member', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Full name').fill('Morgan Tester');
+  await dialog.getByLabel('Work email', { exact: true }).fill(person.workEmail);
+  await dialog.getByLabel('Initial password').fill(password);
+  await dialog.getByLabel('Link employee record').selectOption(person.id);
+  await dialog.getByRole('button', { name: 'Create access', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  const members = await (await page.request.get('/api/members')).json();
+  detachedUsers.push(
+    members.find((member: { user: { email: string } }) => member.user.email === person.workEmail)
+      .user.id,
+  );
+  await page.getByLabel('Role for Morgan Tester').selectOption('MANAGER');
+  await dialog.getByRole('button', { name: 'Update role', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByLabel('Role for Morgan Tester')).toHaveValue('MANAGER');
+  await page.getByRole('button', { name: 'Revoke access for Morgan Tester' }).click();
+  await dialog.getByRole('button', { name: 'Revoke access', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByLabel('Role for Morgan Tester')).toHaveCount(0);
+  expect((await page.request.get(`/api/employees/${person.id}`)).ok()).toBeTruthy();
 });
 
 for (const viewport of [
@@ -207,6 +243,12 @@ test('requests leave, approves it, displays it on the calendar and cancels it', 
     .getByLabel('Leave policy')
     .selectOption({ label: 'Annual leave · 20 days available' });
   const start = monday();
+  const pickerDays = dialog.locator('.rdp-day:not(.rdp-outside) .rdp-day_button');
+  await pickerDays.nth(8).click();
+  const rangeStart = await dialog.getByLabel('From', { exact: true }).inputValue();
+  await pickerDays.nth(10).click();
+  await expect(dialog.getByLabel('From', { exact: true })).toHaveValue(rangeStart);
+  await expect(dialog.getByLabel('Through', { exact: true })).not.toHaveValue(rangeStart);
   await dialog.getByLabel('From', { exact: true }).fill(start);
   await dialog.getByLabel('Through', { exact: true }).fill(start);
   await dialog.getByLabel('A note for your approver').fill('A little time to recharge.');
@@ -266,6 +308,16 @@ test('takes a role and candidate from creation through feedback, offer, hire and
     .click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('link', { name: /Jamie Candidate/ }).click();
+  await page.getByLabel('Upload candidate resume').setInputFiles({
+    name: 'candidate.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('Five years of TypeScript, React and accessible integration testing.'),
+  });
+  await expect(page.getByRole('button', { name: 'Download uploaded resume' })).toBeVisible();
+  await page.context().clearCookies({ name: 'peopleos_access' });
+  const resumeDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download uploaded resume' }).click();
+  expect((await resumeDownload).suggestedFilename()).toBe('resume.txt');
   await page.getByRole('button', { name: 'Notes', exact: true }).click();
   await page.getByLabel('Your notes').fill('Strong concrete examples from past projects.');
   await page.getByRole('button', { name: 'Save notes' }).click();
@@ -315,6 +367,74 @@ test('saves private paperwork and handbook text, downloads it and handles unavai
   await page.getByRole('button', { name: 'Delete QA Handbook' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Remove document' }).click();
   await expect(page.getByRole('heading', { name: 'QA Handbook' })).toHaveCount(0);
+});
+
+test('renders deterministic AI drafts, batch assessments and handbook citations without a provider key', async ({
+  page,
+}) => {
+  await createWorkspace(page);
+  const markdown =
+    '## Overview\nBuild accessible TypeScript products.\n## Requirements\nExperience testing real applications.';
+  await page.route('**/api/ai/jd', (route) => route.fulfill({ json: { markdown } }));
+  await page.goto('/app/recruiting/jobs');
+  await page.getByRole('button', { name: 'Create role', exact: true }).first().click();
+  await page.getByLabel('Job title', { exact: true }).fill('AI Test Engineer');
+  await page.getByLabel('Department', { exact: true }).fill('Engineering');
+  await page.getByRole('button', { name: 'Write with AI' }).click();
+  await page.getByRole('button', { name: 'Generate description', exact: true }).click();
+  await expect(page.getByLabel('Generated job description')).toHaveValue(markdown);
+  await page.getByRole('button', { name: 'Use this description' }).click();
+  await expect(page.getByLabel('Job description', { exact: true })).toHaveValue(markdown);
+  await page.getByRole('button', { name: 'Create role', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const jobs = await (await page.request.get('/api/jobs')).json();
+  const job = jobs.find((item: { title: string }) => item.title === 'AI Test Engineer');
+  const candidate = await (
+    await page.request.post(`/api/jobs/${job.id}/candidates`, {
+      data: {
+        name: 'AI Candidate',
+        email: `ai-${unique()}@example.test`,
+        resumeText: 'TypeScript, accessibility and integration testing experience.',
+      },
+    })
+  ).json();
+  await page.route('**/api/ai/screen-resume', async (route) => {
+    expect(route.request().postDataJSON().candidateId).toBe(candidate.id);
+    await route.fulfill({
+      json: {
+        score: 84,
+        summary: 'Relevant documented experience.',
+        reasons: ['TypeScript experience'],
+        missingSkills: [],
+      },
+    });
+  });
+  await page.goto('/app/ai');
+  await page.getByRole('button', { name: 'Resume screening', exact: true }).click();
+  await page.getByLabel('Choose a role').selectOption(job.id);
+  await page.getByRole('checkbox', { name: /AI Candidate/ }).check();
+  await page.getByRole('button', { name: 'Screen 1 resume', exact: true }).click();
+  await expect(page.getByText('84/100', { exact: true })).toBeVisible();
+  await page.route('**/api/ai/chat', (route) =>
+    route.fulfill({
+      json: {
+        answer: 'Annual leave is twenty working days.',
+        citations: [
+          {
+            id: 'qa-chunk',
+            documentId: 'qa-source',
+            title: 'Annual Leave Policy',
+            excerpt: 'Twenty working days per year.',
+          },
+        ],
+      },
+    }),
+  );
+  await page.getByRole('button', { name: 'Ask your handbook', exact: true }).click();
+  await page.getByLabel('Ask your company handbook').fill('How much annual leave is available?');
+  await page.getByRole('button', { name: 'Send policy question' }).click();
+  await expect(page.getByRole('log')).toContainText('Annual leave is twenty working days.');
+  await expect(page.getByRole('log')).toContainText('Annual Leave Policy');
 });
 
 test('persists goals and quarterly reflections', async ({ page }) => {

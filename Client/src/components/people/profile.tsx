@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   CalendarDays,
   CheckCheck,
-  Download,
   MapPin,
   Pencil,
   ShieldCheck,
@@ -14,6 +13,7 @@ import {
   Archive,
 } from 'lucide-react';
 import { useAction, useApi, useSession } from '@/hooks/use-api';
+import { DownloadButton } from '@/components/ui/download-button';
 import { api } from '@/lib/api';
 import type { Employee } from '@/lib/types';
 import { dateLabel, fullName, isAdmin } from '@/lib/utils';
@@ -186,13 +186,10 @@ export function EmployeeProfile({ id }: { id: string }) {
                         {doc.category} · {dateLabel(doc.createdAt)}
                       </p>
                     </div>
-                    <a
-                      href={`/api/documents/${doc.id}/download`}
-                      className="icon-button"
-                      aria-label={`Download ${doc.title}`}
-                    >
-                      <Download size={18} />
-                    </a>
+                    <DownloadButton
+                      path={`/documents/${doc.id}/download`}
+                      label={`Download ${doc.title}`}
+                    />
                   </div>
                 ))
               ) : (
@@ -289,14 +286,24 @@ export function EmployeeProfile({ id }: { id: string }) {
                   <p className="muted" style={{ marginBottom: 13 }}>
                     Reports to
                   </p>
-                  <Link className="person-cell" href={`/app/directory/${person.manager.id}`}>
-                    <Avatar name={fullName(person.manager)} />
-                    <span>
-                      <strong>{fullName(person.manager)}</strong>
-                      <small>{person.manager.title}</small>
-                    </span>
-                    <ArrowUpRight size={16} />
-                  </Link>
+                  {admin || (session?.role === 'MANAGER' && id !== session.employeeId) ? (
+                    <Link className="person-cell" href={`/app/directory/${person.manager.id}`}>
+                      <Avatar name={fullName(person.manager)} />
+                      <span>
+                        <strong>{fullName(person.manager)}</strong>
+                        <small>{person.manager.title}</small>
+                      </span>
+                      <ArrowUpRight size={16} />
+                    </Link>
+                  ) : (
+                    <div className="person-cell">
+                      <Avatar name={fullName(person.manager)} />
+                      <span>
+                        <strong>{fullName(person.manager)}</strong>
+                        <small>{person.manager.title}</small>
+                      </span>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="row muted">

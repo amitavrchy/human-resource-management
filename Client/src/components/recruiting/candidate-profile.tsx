@@ -6,7 +6,6 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   ArrowUpRight,
-  Download,
   Mail,
   MessageSquare,
   Save,
@@ -15,6 +14,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
+import { DownloadButton } from '@/components/ui/download-button';
 import { api } from '@/lib/api';
 import type { Candidate, Stage } from '@/lib/types';
 import { canRecruit, dateLabel, isAdmin, label } from '@/lib/utils';
@@ -95,10 +95,10 @@ function Resume({ candidate, write }: { candidate: Candidate; write: boolean }) 
         </div>
       )}
       {candidate.hasResume && (
-        <a href={`/api/candidates/${candidate.id}/resume`} className="text-link">
-          <Download size={16} />
-          Download uploaded resume
-        </a>
+        <DownloadButton
+          path={`/candidates/${candidate.id}/resume`}
+          label="Download uploaded resume"
+        />
       )}
       {write ? (
         <form onSubmit={handleSubmit((data) => save.mutate(data))}>

@@ -17,6 +17,7 @@ const fields = {
   name: z.string().optional(),
   organizationName: z.string().optional(),
   slug: z.string().optional(),
+  organizationSlug: z.string().max(60).optional(),
 };
 type AuthValues = {
   email: string;
@@ -24,6 +25,7 @@ type AuthValues = {
   name?: string;
   organizationName?: string;
   slug?: string;
+  organizationSlug?: string;
 };
 export function AuthForm({ registerMode = false }: { registerMode?: boolean }) {
   const schema = z.object(fields).superRefine((data, ctx) => {
@@ -63,7 +65,15 @@ export function AuthForm({ registerMode = false }: { registerMode?: boolean }) {
     try {
       await api.post(
         registerMode ? '/auth/register' : '/auth/login',
-        registerMode ? values : { email: values.email, password: values.password },
+        registerMode
+          ? values
+          : {
+              email: values.email,
+              password: values.password,
+              ...(values.organizationSlug?.trim()
+                ? { organizationSlug: values.organizationSlug.trim() }
+                : {}),
+            },
       );
       query.clear();
       const next = search.get('next');
@@ -178,6 +188,23 @@ export function AuthForm({ registerMode = false }: { registerMode?: boolean }) {
                 </span>
               )}
             </div>
+            {!registerMode && (
+              <details style={{ margin: '10px 0 18px' }}>
+                <summary className="muted" style={{ cursor: 'pointer' }}>
+                  Choose a specific workspace (optional)
+                </summary>
+                <Field
+                  label="Workspace handle"
+                  hint="Use this when your account belongs to more than one workspace."
+                >
+                  <input
+                    maxLength={60}
+                    placeholder="orbit-demo"
+                    {...register('organizationSlug')}
+                  />
+                </Field>
+              </details>
+            )}
             <Button type="submit" loading={isSubmitting}>
               {registerMode ? 'Create workspace' : 'Sign in'}
               <ArrowRight size={17} />
