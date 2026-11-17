@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node init && next dev",
-    "build": "node init && next build",
-    "start": "node init && node scripts/start.mjs",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node scripts/start.mjs",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test"
